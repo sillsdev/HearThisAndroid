@@ -2,7 +2,7 @@ package Script;
 
 public class BookInfo {
     private String _projectName;
-    private String _name;
+    public String Name;
     public int ChapterCount;
     public int BookNumber;
    
@@ -19,7 +19,7 @@ public class BookInfo {
 	{
         BookNumber = number;
         _projectName = projectName;
-        _name = name;
+        Name = name;
         ChapterCount = chapterCount;
         _versesPerChapter = versesPerChapter;
         //_scriptProvider = scriptProvider;
