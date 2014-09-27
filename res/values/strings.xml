@@ -3,5 +3,7 @@
 
     <string name="app_name">HearThis</string>
     <string name="hello_world">Hello world!</string>
+    <string name="Open">Open</string>
+    <string name="Publish">Publish</string>
 
 </resources>

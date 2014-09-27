@@ -1,4 +1,6 @@
-package Activities;
+package org.sil.hearthis;
+
+import org.sil.hearthis.R;
 
 import android.app.Activity;
 import android.os.Bundle;
