@@ -1,6 +1,8 @@
 package Script;
 
-public class BookInfo {
+import java.io.Serializable;
+
+public class BookInfo implements Serializable {
     private String _projectName;
     public String Name;
     public int ChapterCount;

@@ -1,0 +1,46 @@
+package org.sil.hearthis;
+
+import Script.BookInfo;
+import Script.Project;
+import Script.SampleScriptProvider;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class ChooseChapterActivity extends Activity {
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_chapters);
+		Intent intent = getIntent();
+		Bundle extras = intent.getExtras();
+		BookInfo book = (BookInfo)extras.get("bookInfo");
+		
+		TextView bookBox = (TextView)findViewById(R.id.bookNameText);
+		bookBox.setText(book.Name);
+		
+		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		ViewGroup chapsFlow = (ViewGroup) findViewById(R.id.chapsFlow);
+		chapsFlow.removeAllViews();
+		for (int i = 0; i <= book.ChapterCount; i++) {
+			Button chapButton = (Button) inflater.inflate(R.layout.chap_button, null);
+			chapButton.setText(Integer.toString(i));
+			int safeChapNum = i;
+			chapButton.setOnClickListener(new android.view.View.OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					// Todo: set up activity for recording chapter safeChapNum of book						
+				}
+			});
+			chapsFlow.addView(chapButton);
+		}
+
+	}
+}

@@ -2,6 +2,7 @@ package org.apmem.tools.layouts;
 // Copyright 2011, Artem Votincev (apmem.org)
 // Used under Apache license from https://github.com/ApmeM/android-flowlayout
 // Very slightly modified to make packaging work.
+// Todo: when we have a contributions page or About box acknowledge this better.
 
 import org.sil.hearthis.R;
 

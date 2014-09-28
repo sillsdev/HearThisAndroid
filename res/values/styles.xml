@@ -20,5 +20,6 @@
     <color name="mainBackground">#404040</color>
     <color name="navButtonHiliteColor">#913A1B</color>
     <color name="navButtonColor">#232653</color>
+    <color name="labelTextColor">#FFF</color>
 
 </resources>
