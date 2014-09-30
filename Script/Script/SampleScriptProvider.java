@@ -11,14 +11,14 @@ public class SampleScriptProvider implements IScriptProvider {
 	@Override
 	public ScriptLine GetLine(int bookNumber, int chapterNumber,
 			int lineNumber0Based) {
-		// TODO Auto-generated method stub
-		return null;
+		if (lineNumber0Based  ==0)
+			return new ScriptLine("Sample Introduction -- this would be replaced with real chapter intro");
+		return new ScriptLine("This would be replaced with line " + lineNumber0Based + " of the chapter");
 	}
 
 	@Override
 	public int GetScriptLineCount(int bookNumber, int chapter1Based) {
-		// TODO Auto-generated method stub
-		return 0;
+		return _stats.Books.get(bookNumber).VersesPerChapter[chapter1Based];
 	}
 
 	@Override

@@ -5,5 +5,8 @@
     <string name="hello_world">Hello world!</string>
     <string name="Open">Open</string>
     <string name="Publish">Publish</string>
+    <string name="Play">Play</string>
+    <string name="Record">Record</string>
+    <string name="Next">Next</string>
 
 </resources>

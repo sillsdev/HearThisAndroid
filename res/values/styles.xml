@@ -21,5 +21,7 @@
     <color name="navButtonHiliteColor">#913A1B</color>
     <color name="navButtonColor">#232653</color>
     <color name="labelTextColor">#FFF</color>
+    <color name="contextTextLine">#E0E0E0</color>
+    <color name="activeTextLine">#FCCA01</color>
 
 </resources>

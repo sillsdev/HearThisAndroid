@@ -20,7 +20,7 @@ public class ChooseChapterActivity extends Activity {
 		setContentView(R.layout.activity_chapters);
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
-		BookInfo book = (BookInfo)extras.get("bookInfo");
+		final BookInfo book = (BookInfo)extras.get("bookInfo");
 		
 		TextView bookBox = (TextView)findViewById(R.id.bookNameText);
 		bookBox.setText(book.Name);
@@ -31,12 +31,16 @@ public class ChooseChapterActivity extends Activity {
 		for (int i = 0; i <= book.ChapterCount; i++) {
 			Button chapButton = (Button) inflater.inflate(R.layout.chap_button, null);
 			chapButton.setText(Integer.toString(i));
-			int safeChapNum = i;
+			final int safeChapNum = i;
 			chapButton.setOnClickListener(new android.view.View.OnClickListener() {
 				
 				@Override
 				public void onClick(View v) {
-					// Todo: set up activity for recording chapter safeChapNum of book						
+					// set up activity for recording chapter safeChapNum of book						
+					Intent record = new Intent(ChooseChapterActivity.this, RecordActivity.class);
+					record.putExtra("bookInfo", book);
+					record.putExtra("chapter", safeChapNum);
+					startActivity(record);
 				}
 			});
 			chapsFlow.addView(chapButton);

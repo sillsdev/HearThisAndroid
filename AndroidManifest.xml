@@ -26,6 +26,9 @@
             android:name=".ChooseChapterActivity"
             android:label="@string/app_name" >
         </activity>
-    </application>
+        <activity
+            android:name=".RecordActivity"
+            android:label="@string/app_name" >
+        </activity>    </application>
 
 </manifest>
