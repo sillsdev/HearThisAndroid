@@ -3,6 +3,8 @@ package org.sil.hearthis;
 import java.io.File;
 import java.io.IOException;
 
+import org.sil.palaso.Graphite;
+
 import Script.BookInfo;
 import Script.IScriptProvider;
 import Script.Project;
@@ -11,6 +13,7 @@ import Script.ScriptLine;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -35,12 +38,16 @@ public class RecordActivity extends Activity {
 	ViewGroup _linesView;
 	int _lineCount;
 	
+	Typeface mtfl;
+	
 	MediaRecorder recorder = null;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
+		
+		mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
 		
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
@@ -58,10 +65,17 @@ public class RecordActivity extends Activity {
 		for (int i = 0; i < _lineCount; i++) {
 			ScriptLine line = provider.GetLine(bookNum, chapNum, i);
 			TextView lineView = (TextView) inflater.inflate(R.layout.text_line, null);
+//			if (i == 1)
+//				lineView.setText("\u00F0\u0259 k\u02B0\u00E6t\u02B0 s\u00E6\u0301t\u02B0 o\u0303\u0300\u014A mi\u0302\u02D0");
+//			else if (i == 2)
+//				lineView.setText("Grandroid says 'Hello!'");
+//			else
 			lineView.setText(line.Text);
+			lineView.setTypeface(mtfl, 0);
 			if (i == 0) {
 				lineView.setTextColor(getResources().getColor(R.color.activeTextLine));
 			}
+
 			_linesView.addView(lineView);
 		}
 		
