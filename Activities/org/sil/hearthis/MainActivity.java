@@ -1,9 +1,11 @@
 package org.sil.hearthis;
 
 import org.sil.hearthis.R;
+import org.sil.palaso.Graphite;
 
 import Script.BookInfo;
 import Script.Project;
+import Script.RealScriptProvider;
 import Script.SampleScriptProvider;
 import android.app.Activity;
 import android.content.Context;
@@ -24,8 +26,13 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+        Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
-		Project project = new Project("Sample", new SampleScriptProvider());
+		// Todo: scan org.sil.hearthis/files for folders containing info.txt and open first
+		// Todo: remember last project
+		// Todo: if no real project available use SampleScriptProvider.
+		RealScriptProvider scripture = new RealScriptProvider(getExternalFilesDir(null) + "/" + "Dhh");
+		Project project = new Project("Sample", scripture);
 		setProject(project);
 	}
 	
