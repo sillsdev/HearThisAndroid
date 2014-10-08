@@ -23,5 +23,17 @@
     <color name="labelTextColor">#FFF</color>
     <color name="contextTextLine">#E0E0E0</color>
     <color name="activeTextLine">#FCCA01</color>
+    <color name="navButtonTextColor">#F0F0F0</color>
+    <color name="navButtonLawColor">#353870</color>
+    <color name="navButtonHistoryColor">#232653</color>
+    <color name="navButtonPoetryColor">#353870</color>
+    <color name="navButtonMajorProphetColor">#232653</color>
+    <color name="navButtonMinorProphetColor">#353870</color>
+    <color name="navButtonGospelsColor">#232653</color>
+    <color name="navButtonActsColor">#353870</color>
+    <color name="navButtonPaulineColor">#232653</color>
+    <color name="navButtonEpistlesColor">#353870</color>
+    <color name="navButtonRevelationColor">#232653</color>
+    
 
 </resources>

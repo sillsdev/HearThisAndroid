@@ -19,6 +19,7 @@ public class Project {
 			BookStats stats = Statistics.Books.get(bookNumber);
 			BookInfo book = new BookInfo(name, bookNumber, stats.Name, stats.ChapterCount, stats.VersesPerChapter,
 					_scriptProvider);
+			book.Abbr = stats.ThreeLetterAbreviation;
 			Books.add(book);
 		}
 		
