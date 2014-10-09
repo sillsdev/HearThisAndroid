@@ -1,5 +1,6 @@
 package org.sil.hearthis;
 
+import org.apmem.tools.layouts.FlowLayout.LayoutParams;
 import org.sil.hearthis.R;
 import org.sil.palaso.Graphite;
 
@@ -40,7 +41,21 @@ public class MainActivity extends Activity {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		ViewGroup bookFlow = (ViewGroup) findViewById(R.id.booksFlow);
 		for (BookInfo book : project.Books) {
-			BookButton bookButton = (BookButton)inflater.inflate(R.layout.book_button, null);
+			int resid = R.layout.book_button;
+			if (book.BookNumber == 39) {
+				// Matthew: start new line
+				resid = R.layout.newline_book_button;
+			}
+			
+			// This next line is rather non-obvious. We must pass the bookFlow to the inflator
+			// so that it can be used to create the Layout for the button: a custom layout which implements
+			// the extra properties that the FlowLayout recognizes for its children like newline.
+			// But, when we pass a parent, without the third argument inflate adds the button to the
+			// flowLayout itself and returns the parent. That leaves us without an easy way to get the
+			// new button, on which we want to set other properties. So we pass false (do not add
+			// to parent) and thus get the button itself back from inflate. Then of course we must
+			// add it to the parent ourselves.
+			BookButton bookButton = (BookButton)inflater.inflate(resid, bookFlow, false);
 			bookButton.Model = book;
 			bookButton.setOnClickListener(bookButtonListener);
 			bookButton.setTag(book);
