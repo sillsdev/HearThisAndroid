@@ -23,6 +23,9 @@ import android.media.MediaRecorder.OutputFormat;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -231,4 +234,23 @@ public class RecordActivity extends Activity {
 			e.printStackTrace();
 		}		
 	}
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_record, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        if(item.getItemId() == R.id.sync){
+            Intent sync = new Intent(this, SyncActivity.class);
+            startActivity(sync);
+            return true;
+        }
+        return false;
+    }
 }

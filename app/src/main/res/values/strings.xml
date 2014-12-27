@@ -2,11 +2,14 @@
 <resources>
 
     <string name="app_name">HearThis</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="sync_message">Ready to sync with the desktop application. Click the Android button in HearThis on your main computer.</string>
+    <string name="sync_desktop">Sync with desktop application</string>
     <string name="Open">Open</string>
     <string name="Publish">Publish</string>
     <string name="Play">Play</string>
     <string name="Record">Record</string>
     <string name="Next">Next</string>
+    <string name="title_activity_sync">SyncActivity</string>
+    <string name="action_settings">Settings</string>
 
 </resources>
