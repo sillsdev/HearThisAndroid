@@ -52,6 +52,7 @@ public class SyncServer extends Thread {
         registry = new HttpRequestHandlerRegistry();
 
         registry.register("*", new DeviceNameHandler(_parent));
+        registry.register("/file*", new RequestFileHandler(_parent));
 
         httpService.setHandlerResolver(registry);
     }
