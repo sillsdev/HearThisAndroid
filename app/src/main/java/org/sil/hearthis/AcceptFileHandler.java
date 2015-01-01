@@ -41,6 +41,9 @@ public class AcceptFileHandler implements HttpRequestHandler {
             try {
                 byte[] data = EntityUtils.toByteArray(entity);
                 File file = new File(path);
+                File dir = file.getParentFile();
+                if (!dir.exists())
+                    dir.mkdir();
                 FileOutputStream fs = new FileOutputStream(file);
                 fs.write(data);
                 fs.close();
