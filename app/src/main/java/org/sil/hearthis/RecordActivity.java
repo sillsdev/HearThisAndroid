@@ -40,6 +40,9 @@ public class RecordActivity extends Activity {
 	int _activeLine;
 	ViewGroup _linesView;
 	int _lineCount;
+    int _bookNum;
+    int _chapNum;
+    IScriptProvider _provider;
 	
 	Typeface mtfl;
 	
@@ -55,10 +58,10 @@ public class RecordActivity extends Activity {
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
 		BookInfo book = (BookInfo)extras.get("bookInfo");
-		int chapNum = extras.getInt("chapter");
-		int bookNum = book.BookNumber;
-		IScriptProvider provider = book.getScriptProvider();
-		_lineCount = provider.GetScriptLineCount(bookNum, chapNum);
+		_chapNum = extras.getInt("chapter");
+		_bookNum = book.BookNumber;
+	    _provider = book.getScriptProvider();
+		_lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 		_activeLine = 0;
 		
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -66,7 +69,7 @@ public class RecordActivity extends Activity {
 		_linesView.removeAllViews();
 		
 		for (int i = 0; i < _lineCount; i++) {
-			ScriptLine line = provider.GetLine(bookNum, chapNum, i);
+			ScriptLine line = _provider.GetLine(_bookNum, _chapNum, i);
 			TextView lineView = (TextView) inflater.inflate(R.layout.text_line, null);
 //			if (i == 1)
 //				lineView.setText("\u00F0\u0259 k\u02B0\u00E6t\u02B0 s\u00E6\u0301t\u02B0 o\u0303\u0300\u014A mi\u0302\u02D0");
@@ -172,9 +175,9 @@ public class RecordActivity extends Activity {
 		    }
 	    }
 	}
-	
-	String fileName = "TheOneHearThisFile.mpg4";
-	
+
+	String _fileName = "";
+
 	void startRecording() {
 		if (recorder != null) {
 	      recorder.release();
@@ -191,8 +194,8 @@ public class RecordActivity extends Activity {
 		// This combination produces a file that WMP can play.
 		recorder.setOutputFormat(OutputFormat.MPEG_4);
 		recorder.setAudioEncoder(AudioEncoder.AAC);
-		// Todo:  file name and location based on book, chapter, segment
-		File file = new File(getExternalFilesDir(null), fileName);
+		_fileName = _provider.getRecordingFileName(_bookNum, _chapNum, _activeLine);
+		File file = new File(getExternalFilesDir(null), _fileName);
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
 			recorder.prepare();
@@ -208,9 +211,10 @@ public class RecordActivity extends Activity {
 		   recorder.stop();
 		   recorder.reset();
 		   recorder.release();
-		   File file = new File(getExternalFilesDir(null), fileName);
+		   File file = new File(getExternalFilesDir(null), _fileName);
 		   Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
 		   recorder = null;
+           _provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
 	   }
 	}
 	
@@ -225,7 +229,7 @@ public class RecordActivity extends Activity {
 //					+ " of max " + maxVol);
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
 			
-			File file = new File(getExternalFilesDir(null), fileName);
+			File file = new File(getExternalFilesDir(null), _fileName);
 			mp.setDataSource(file.getAbsolutePath());
 			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 			mp.prepare();

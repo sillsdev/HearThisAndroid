@@ -12,4 +12,6 @@ public interface IScriptProvider {
     int GetScriptLineCount(int bookNumber);
     void LoadBook(int bookNumber0Based);
     String getEthnologueCode();
+    void noteBlockRecorded(int bookNumber, int chapter1Based, int blockNo);
+    String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo);
 }

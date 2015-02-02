@@ -46,4 +46,15 @@ public class SampleScriptProvider implements IScriptProvider {
 		return null;
 	}
 
+    @Override
+    public void noteBlockRecorded(int bookNumber, int chapter1Based, int blockNo) {
+
+    }
+
+    @Override
+    public String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo) {
+        // Review: this makes it only possible to have one recording with the sample project.
+        return "TheOneSampleRecording.mpg4";
+    }
+
 }
