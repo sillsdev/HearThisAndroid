@@ -1,22 +1,27 @@
 package Script;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.Serializable;
 
-public class BookInfo implements Serializable {
-	private String _projectName;
-	public String Name;
-	public String Abbr;
-	public int ChapterCount;
-	public int BookNumber;
+public class BookInfo implements Serializable
+{
+	private String projectName;
+	private String name;
+	private String abbr;
+	private int chapterCount;
+	private int bookNumber;
 
-	public IScriptProvider getScriptProvider() {
+	public IScriptProvider getScriptProvider()
+	{
 		return s_theOneScriptProvider;
 	}
 
 	// / <summary>
 	// / [0] == intro, [1] == chapter 1, etc.
 	// / </summary>
-	private int[] _versesPerChapter;
+	private int[] versesPerChapter;
 	// private IScriptProvider _scriptProvider;
 
 	// We'd like an instance variable IScriptProvider.
@@ -30,17 +35,41 @@ public class BookInfo implements Serializable {
 
 	BookInfo(String projectName, int number, String name, int chapterCount,
 			int[] versesPerChapter, IScriptProvider scriptProvider)
-
 	{
-		BookNumber = number;
-		_projectName = projectName;
-		Name = name;
-		ChapterCount = chapterCount;
-		_versesPerChapter = versesPerChapter;
-		if (s_theOneScriptProvider != null
-				&& s_theOneScriptProvider != scriptProvider)
-			throw new UnsupportedOperationException(
-					"need to implement support for multiple script providers");
+		bookNumber = number;
+		this.projectName = projectName;
+		this.name = name;
+		this.chapterCount = chapterCount;
+		this.versesPerChapter = versesPerChapter;
+//		if (s_theOneScriptProvider != null
+//				&& s_theOneScriptProvider != scriptProvider)
+//			throw new UnsupportedOperationException(
+//					"need to implement support for multiple script providers");
 		s_theOneScriptProvider = scriptProvider;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public String getAbbr()
+	{
+		return abbr;
+	}
+
+	public int getChapterCount()
+	{
+		return chapterCount;
+	}
+
+	public int getBookNumber()
+	{
+		return bookNumber;
+	}
+
+	public void setAbbr(String abbr)
+	{
+		this.abbr = abbr;
 	}
 }
