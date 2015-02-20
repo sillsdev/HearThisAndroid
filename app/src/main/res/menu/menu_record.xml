@@ -1,4 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/sync" android:title="@string/sync_desktop"></item>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:appcompat="http://schemas.android.com/apk/res-auto">
+	<item
+		android:id="@+id/help_record"
+		android:icon="@drawable/ic_action_help"
+		android:title="@string/help"
+		appcompat:showAsAction="ifRoom"
+	/>
+	<item
+		android:id="@+id/play"
+		android:icon="@drawable/ic_action_play"
+		android:title="@string/Play"
+		appcompat:showAsAction="ifRoom"
+	/>
+	<item
+		android:id="@+id/next"
+		android:icon="@drawable/ic_action_next_item"
+		android:title="@string/Next"
+		appcompat:showAsAction="ifRoom"
+	/>
+	<item
+		android:id="@+id/sync"
+		android:icon="@drawable/ic_action_refresh"
+		android:title="@string/sync_desktop"
+		appcompat:showAsAction="ifRoom"
+	/>
 </menu>
