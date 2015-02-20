@@ -16,17 +16,22 @@ import java.io.OutputStreamWriter;
 /**
  * Handler responds to HTTP request be returning a string, the name of this device.
  */
-public class DeviceNameHandler implements HttpRequestHandler {
-    SyncService _parent;
-    public DeviceNameHandler(SyncService parent) {
-        _parent = parent;
+public class DeviceNameHandler implements HttpRequestHandler
+{
+    SyncService parent;
+
+    public DeviceNameHandler(SyncService parent)
+	{
+        this.parent = parent;
     }
 
     @Override
     public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
         String contentType = "text";
-        HttpEntity entity = new EntityTemplate(new ContentProducer() {
-            public void writeTo(final OutputStream outstream) throws IOException {
+        HttpEntity entity = new EntityTemplate(new ContentProducer()
+		{
+            public void writeTo(final OutputStream outstream) throws IOException
+			{
                 OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
                 String resp = "John's Android";
 
