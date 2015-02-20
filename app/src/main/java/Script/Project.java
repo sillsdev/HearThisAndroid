@@ -1,27 +1,39 @@
 package Script;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class Project {
+public class Project
+{
 	
-	IScriptProvider _scriptProvider;
+	IScriptProvider scriptProvider;
 	
-	public BibleStats Statistics;
-	public List<BookInfo> Books;
+	BibleStats statistics;
+	ArrayList<BookInfo> books;
+	String projectName;
 
-	public Project(String name, IScriptProvider scriptProvider) {
-		Statistics = new BibleStats();
-		Books = new ArrayList<BookInfo>();
-		_scriptProvider = scriptProvider;
+	public Project(String name, IScriptProvider scriptProvider)
+	{
+		projectName = name;
+		statistics = new BibleStats();
+		books = new ArrayList<BookInfo>();
+		this.scriptProvider = scriptProvider;
 		
-		for (int bookNumber = 0; bookNumber < Statistics.Books.size(); bookNumber++) {
-			BookStats stats = Statistics.Books.get(bookNumber);
-			BookInfo book = new BookInfo(name, bookNumber, stats.Name, stats.ChapterCount, stats.VersesPerChapter,
-					_scriptProvider);
-			book.Abbr = stats.ThreeLetterAbreviation;
-			Books.add(book);
+		for (int bookNumber = 0; bookNumber < statistics.books.size(); bookNumber++)
+		{
+			BookStats stats = statistics.books.get(bookNumber);
+			BookInfo book = new BookInfo(name, bookNumber, stats.name, stats.chapterCount, stats.versesPerChapter,
+					this.scriptProvider);
+			book.setAbbr(stats.threeLetterAbbreviation);
+			books.add(book);
 		}
-		
+	}
+
+	public ArrayList<BookInfo> getBooks()
+	{
+		return books;
 	}
 }
