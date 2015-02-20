@@ -1,6 +1,7 @@
 package Script;
 
-public class ScriptLine {
+public class ScriptLine
+{
     public String Text;
     public Boolean Bold;
     public Boolean Centered;
