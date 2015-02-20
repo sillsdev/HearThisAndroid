@@ -1,6 +1,9 @@
 package Script;
 
-public interface IScriptProvider {
+import org.json.JSONObject;
+
+public interface IScriptProvider
+{
     /// <summary>
     /// The "line" is a bit of script; it would be the verse, except there are more things than verses to read (chapter #, section headings, etc.)
     /// </summary>
