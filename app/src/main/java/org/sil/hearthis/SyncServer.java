@@ -1,6 +1,5 @@
 package org.sil.hearthis;
 
-import org.apache.http.HttpException;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
@@ -22,19 +21,20 @@ import java.net.Socket;
  * SyncServer manages the 'web server' for the synchronization service that supports data
  * exchange with HearThis desktop
  */
-public class SyncServer extends Thread {
-    SyncService _parent;
-    Integer _serverPort = 8087;
+public class SyncServer extends Thread
+{
+    SyncService parent;
+    Integer serverPort = 8087;
     private BasicHttpProcessor httpproc = null;
     private BasicHttpContext httpContext = null;
     private HttpService httpService = null;
     private HttpRequestHandlerRegistry registry = null;
-    boolean _running;
+    boolean running;
 
     public SyncServer(SyncService parent)
     {
         super("HearThisAndroidServer");
-        _parent = parent;
+        this.parent = parent;
 
         httpproc = new BasicHttpProcessor();
         httpContext = new BasicHttpContext();
@@ -51,35 +51,41 @@ public class SyncServer extends Thread {
 
         registry = new HttpRequestHandlerRegistry();
 
-        registry.register("*", new DeviceNameHandler(_parent));
-        registry.register("/getfile*", new RequestFileHandler(_parent));
-        registry.register("/putfile*", new AcceptFileHandler(_parent));
-        registry.register("/list*", new ListDirectoryHandler(_parent));
+        registry.register("*", new DeviceNameHandler(this.parent));
+        registry.register("/getfile*", new RequestFileHandler(this.parent));
+        registry.register("/putfile*", new AcceptFileHandler(this.parent));
+        registry.register("/list*", new ListDirectoryHandler(this.parent));
         httpService.setHandlerResolver(registry);
     }
-    public synchronized void startThread() {
-        _running = true;
 
+    public synchronized void startThread()
+	{
+        running = true;
         super.start();
     }
 
     // Clear flag so main loop will terminate after next request.
-    public synchronized void stopThread(){
-        _running = false;
+    public synchronized void stopThread()
+	{
+        running = false;
     }
 
     // Method executed in thread when super.start() is called.
     @Override
-    public void run() {
+    public void run()
+	{
         super.run();
 
-        try {
-            ServerSocket serverSocket = new ServerSocket(_serverPort);
+        try
+		{
+            ServerSocket serverSocket = new ServerSocket(serverPort);
 
             serverSocket.setReuseAddress(true);
 
-            while(_running){
-                try {
+            while(running)
+			{
+                try
+				{
                     final Socket socket = serverSocket.accept();
 
                     DefaultHttpServerConnection serverConnection = new DefaultHttpServerConnection();
@@ -89,16 +95,17 @@ public class SyncServer extends Thread {
                     httpService.handleRequest(serverConnection, httpContext);
 
                     serverConnection.shutdown();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (HttpException e) {
+                }
+				catch (Exception e)
+				{
                     e.printStackTrace();
                 }
             }
 
             serverSocket.close();
         }
-        catch (IOException e) {
+        catch (IOException e)
+		{
             e.printStackTrace();
         }
     }

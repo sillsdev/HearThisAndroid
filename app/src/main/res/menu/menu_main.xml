@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:appcompat="http://schemas.android.com/apk/res-auto">
+<!--
+		<item
+			android:id="@+id/open"
+			android:title="@string/Open"
+			android:actionLayout="@layout/actionbar_textview"
+			appcompat:showAsAction="ifRoom"
+		/>
+		<item
+			android:id="@+id/publish"
+			android:title="@string/Publish"
+			android:actionLayout="@layout/actionbar_textview"
+			appcompat:showAsAction="i"
+		/>
+-->
+		<item
+			android:id="@+id/open"
+			android:icon="@drawable/ic_action_read"
+			android:title="@string/Open"
+			appcompat:showAsAction="ifRoom"
+		/>
+		<item
+			android:id="@+id/publish"
+			android:icon="@drawable/ic_action_send"
+			android:title="@string/Publish"
+			appcompat:showAsAction="ifRoom"
+		/>
+</menu>

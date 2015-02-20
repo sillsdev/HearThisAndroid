@@ -18,20 +18,26 @@ import java.io.IOException;
 /**
  * Created by Thomson on 12/28/2014.
  */
-public class RequestFileHandler implements HttpRequestHandler {
-    Context _parent;
+public class RequestFileHandler implements HttpRequestHandler
+{
+    Context parent;
+
     public RequestFileHandler(Context parent)
     {
-        _parent = parent;
+        this.parent = parent;
     }
+
     @Override
-    public void handle(HttpRequest request, HttpResponse response, HttpContext httpContext) throws HttpException, IOException {
-        File baseDir = _parent.getExternalFilesDir(null);
+    public void handle(HttpRequest request, HttpResponse response, HttpContext httpContext)
+			throws HttpException, IOException
+	{
+        File baseDir = parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
         String path = baseDir  + "/" + filePath;
         File file = new File(path);
-        if (!file.exists()) {
+        if (!file.exists())
+		{
             response.setStatusCode(HttpStatus.SC_NOT_FOUND);
             response.setEntity(new StringEntity(""));
             return;

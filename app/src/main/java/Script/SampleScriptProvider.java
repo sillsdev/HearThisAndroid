@@ -1,11 +1,15 @@
 package Script;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class SampleScriptProvider implements IScriptProvider {
 
-	BibleStats _stats;
+	BibleStats stats;
 	
-	public SampleScriptProvider() {
-		_stats = new BibleStats();
+	public SampleScriptProvider()
+	{
+		stats = new BibleStats();
 	}
 	
 	@Override
@@ -18,7 +22,7 @@ public class SampleScriptProvider implements IScriptProvider {
 
 	@Override
 	public int GetScriptLineCount(int bookNumber, int chapter1Based) {
-		return _stats.Books.get(bookNumber).VersesPerChapter[chapter1Based];
+		return stats.books.get(bookNumber).versesPerChapter[chapter1Based];
 	}
 
 	@Override
@@ -56,5 +60,4 @@ public class SampleScriptProvider implements IScriptProvider {
         // Review: this makes it only possible to have one recording with the sample project.
         return "TheOneSampleRecording.mpg4";
     }
-
 }

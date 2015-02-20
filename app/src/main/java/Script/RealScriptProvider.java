@@ -1,5 +1,7 @@
 package Script;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -9,12 +11,8 @@ import org.xml.sax.SAXException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,59 +20,73 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-public class RealScriptProvider implements IScriptProvider {
-	
-	String _path;
-	List<BookData> Books = new ArrayList<BookData>();
+public class RealScriptProvider implements IScriptProvider
+{
+	String path;
+	ArrayList<BookData> books = new ArrayList<BookData>();
     public String infoFileName = "info.xml";
-	class ChapterData {
+
+	class ChapterData
+	{
 		public String bookName;
 		public int chapterNumber;
 		public int lineCount;
 		public int translatedCount; // not currently accurate; useful only for empty if 0.
+
 		String[] lines = new String[0];
-        String chapFolder = _path + "/" + bookName + "/" + chapterNumber;
+        String chapFolder = path + "/" + bookName + "/" + chapterNumber;
         String chapInfoFile = chapFolder + "/" + infoFileName;
 
-        String recordingFileName(int blockNo) {
+        String recordingFileName(int blockNo)
+		{
             return chapFolder + "/" + blockNo + ".mpg4";
         }
-		String[] getLines() {
+
+		String[] getLines()
+		{
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.
 				return lines;
             File infoFile = new File(chapInfoFile);
             if (infoFile.exists())
             {
                 lines = new String[lineCount];
-                try {
+                try
+				{
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();
                     Document dom = builder.parse(new FileInputStream(chapInfoFile));
                     Element root = dom.getDocumentElement();
                     NodeList source = root.getElementsByTagName("Source");
-                    if (source.getLength() == 1) {
+                    if (source.getLength() == 1)
+					{
                         NodeList lineNodes = source.item(0).getChildNodes();
                         // Enhance: handle pathological case where lineCount recorded in info.txt
                         // does not match number of ScriptLine elements in Source.
-                        for(int i = 0; i < lineNodes.getLength(); i++) {
+                        for(int i = 0; i < lineNodes.getLength(); i++)
+						{
                             Element line = (Element)lineNodes.item(i);
                             NodeList textNodes = line.getElementsByTagName("Text");
-                            if (textNodes.getLength() > 0) {
+                            if (textNodes.getLength() > 0)
+							{
                                 lines[i] = textNodes.item(0).getTextContent();
                             }
-                            else {
+                            else
+							{
                                 lines[i] = "";
                             }
                         }
                     }
                 }
-                catch(IOException e) {
+                catch(IOException e)
+				{
                     e.printStackTrace();
                 }
-                catch (ParserConfigurationException e) {
+                catch (ParserConfigurationException e)
+				{
                     e.printStackTrace();
                 }
-                catch (SAXException e) {
+                catch (SAXException e)
+				{
                     e.printStackTrace();
                 }
             }
@@ -115,13 +127,15 @@ public class RealScriptProvider implements IScriptProvider {
         // was last recorded.
         void noteLineRecorded(int lineNo)
         {
-            try {
+            try
+			{
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 Document dom = builder.parse(new FileInputStream(chapInfoFile));
                 Element root = dom.getDocumentElement();
                 NodeList source = root.getElementsByTagName("Source");
-                if (source.getLength() == 1) {
+                if (source.getLength() == 1)
+				{
                     NodeList lineNodes = source.item(0).getChildNodes();
                     Element line = (Element)lineNodes.item(lineNo);
                     NodeList recordingsNodes = root.getElementsByTagName(recordingsEltName);
@@ -129,40 +143,48 @@ public class RealScriptProvider implements IScriptProvider {
                     if (recordingsNodes.getLength() != 0) {
                         recording = (Element) recordingsNodes.item(0);
                     }
-                    else {
+                    else
+					{
                         recording = dom.createElement(recordingsEltName);
                         root.appendChild(recording);
                     }
                     NodeList recordings = recording.getChildNodes();
                     Node currentRecording = findNodeByEltValue(recordings, lineNoEltName, ""+lineNo);
                     Node newRecording = line.cloneNode(true);
-                    if (currentRecording != null) {
+                    if (currentRecording != null)
+					{
                         recording.replaceChild(currentRecording, newRecording);
-                    } else {
+                    } else
+					{
                         Node insertBefore = findNodeToInsertBefore(recordings, lineNoEltName, lineNo);
                         recording.insertBefore(insertBefore, newRecording);
                     }
                 }
             }
-            catch(IOException e) {
+            catch(IOException e)
+			{
                 e.printStackTrace();
             }
-            catch (ParserConfigurationException e) {
+            catch (ParserConfigurationException e)
+			{
                 e.printStackTrace();
             }
-            catch (SAXException e) {
+            catch (SAXException e)
+			{
                 e.printStackTrace();
             }
         }
 
-        Element findChildByTagName(Element parent, String name) {
+        Element findChildByTagName(Element parent, String name)
+		{
             NodeList list = parent.getElementsByTagName(name);
             if (list.getLength() > 0)
                 return (Element)list.item(0);
             return null;
         }
 
-        String findChildContentByTagName(Element parent, String name) {
+        String findChildContentByTagName(Element parent, String name)
+		{
             Element child = findChildByTagName(parent, name);
             if (child == null)
                 return "";
@@ -171,7 +193,8 @@ public class RealScriptProvider implements IScriptProvider {
 
         Node findNodeByEltValue(NodeList nodes, String childName, String val)
         {
-            for (int i = 0; i < nodes.getLength(); i++) {
+            for (int i = 0; i < nodes.getLength(); i++)
+			{
                 Element item = (Element)nodes.item(i);
                 if (findChildContentByTagName(item, childName) == val)
                     return item;
@@ -179,8 +202,10 @@ public class RealScriptProvider implements IScriptProvider {
             return null;
         }
 
-        Node findNodeToInsertBefore(NodeList nodes, String childName, int val) {
-            for (int i = 0; i < nodes.getLength(); i++) {
+        Node findNodeToInsertBefore(NodeList nodes, String childName, int val)
+		{
+            for (int i = 0; i < nodes.getLength(); i++)
+			{
                 Element item = (Element) nodes.item(i);
                 String thisVal = findChildContentByTagName(item, childName);
                 int thisNum = Integer.parseInt(thisVal);
@@ -190,23 +215,29 @@ public class RealScriptProvider implements IScriptProvider {
             return null;
         }
 	}
-	class BookData {
+
+	class BookData
+	{
 		public String name;
 		public List<ChapterData> chapters = new ArrayList<ChapterData>();
 	}
-	public RealScriptProvider(String path) {
-		_path = path;
-		try	{
+
+	public RealScriptProvider(String path) throws Exception
+	{
+		this.path = path;
+		try
+		{
 			String infoPath = path + "/info.txt";
 			BufferedReader buf = new BufferedReader(new InputStreamReader(new FileInputStream(infoPath),"UTF-8"));
 			int ibook = 0;
 			for (String line = buf.readLine(); line != null; ibook++, line = buf.readLine()) {
 				String[] parts = line.split(";");
 				BookData bookdata = new BookData();
-				Books.add(bookdata);
+				books.add(bookdata);
 				if (parts.length > 0)
 					bookdata.name = parts[0]; // else get from stats??
-				if (parts.length > 1) {
+				if (parts.length > 1)
+				{
 					String[] chapParts = parts[1].split(",");
 					for (String chapSrc : chapParts) {
 						String[] counts = chapSrc.split(":");
@@ -219,28 +250,34 @@ public class RealScriptProvider implements IScriptProvider {
 					}
 				}
 			}
-		} catch (IOException ex) { // most likely file not found
+		}
+		catch (Exception ex)
+		{
+			throw ex;
 		}
 	}
 
 	@Override
 	public ScriptLine GetLine(int bookNumber, int chapter1Based,
-			int lineNumber0Based) {
+			int lineNumber0Based)
+	{
 		ChapterData chapter = GetChapter(bookNumber, chapter1Based);
 		if (chapter == null)
 			return new ScriptLine("");
 		return new ScriptLine(chapter.getLines()[lineNumber0Based]);
 	}
 	
-	ChapterData GetChapter(int bookNumber, int chapter1Based) {
-		BookData book = Books.get(bookNumber);
+	ChapterData GetChapter(int bookNumber, int chapter1Based)
+	{
+		BookData book = books.get(bookNumber);
 		if (chapter1Based >= book.chapters.size())
 			return null;
 		return book.chapters.get(chapter1Based);
 	}
 
 	@Override
-	public int GetScriptLineCount(int bookNumber, int chapter1Based) {
+	public int GetScriptLineCount(int bookNumber, int chapter1Based)
+	{
 		ChapterData chap = GetChapter(bookNumber, chapter1Based);
 		if (chap == null)
 			return 0;
@@ -248,7 +285,8 @@ public class RealScriptProvider implements IScriptProvider {
 	}
 
 	@Override
-	public int GetTranslatedVerseCount(int bookNumber, int chapter1Based) {
+	public int GetTranslatedVerseCount(int bookNumber, int chapter1Based)
+	{
 		ChapterData chap = GetChapter(bookNumber, chapter1Based);
 		if (chap == null)
 			return 0;
@@ -256,8 +294,9 @@ public class RealScriptProvider implements IScriptProvider {
 	}
 
 	@Override
-	public int GetScriptLineCount(int bookNumber) {
-		BookData book = Books.get(bookNumber);
+	public int GetScriptLineCount(int bookNumber)
+	{
+		BookData book = books.get(bookNumber);
 		int total = 0;
 		for (int i = 0; i < book.chapters.size(); i++)
 			total += GetScriptLineCount(bookNumber, i);
@@ -265,19 +304,22 @@ public class RealScriptProvider implements IScriptProvider {
 	}
 
 	@Override
-	public void LoadBook(int bookNumber0Based) {
+	public void LoadBook(int bookNumber0Based)
+	{
 		// nothing to do here in this version.
 		
 	}
 
 	@Override
-	public String getEthnologueCode() {
+	public String getEthnologueCode()
+	{
 		// TODO need to enhance creation and reading in info.txt to handle this if we need it.
 		return null;
 	}
 
     @Override
-    public void noteBlockRecorded(int bookNumber, int chapter1Based, int blockNo) {
+    public void noteBlockRecorded(int bookNumber, int chapter1Based, int blockNo)
+	{
         ChapterData chap = GetChapter(bookNumber, chapter1Based);
         if (chap == null)
             return; // or throw??
@@ -286,11 +328,41 @@ public class RealScriptProvider implements IScriptProvider {
     }
 
     @Override
-    public String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo) {
+    public String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo)
+	{
         ChapterData chap = GetChapter(bookNumber, chapter1Based);
         if (chap == null)
             return null; // or throw??
         return chap.recordingFileName(blockNo);
     }
 
+	public static RealScriptProvider fromJSONObject(final JSONObject jo)
+	{
+		try
+		{
+			RealScriptProvider obj = new RealScriptProvider(jo.optString("path"));
+			JSONArray booksJA = jo.optJSONArray("books");
+			obj.books = new ArrayList<BookData>(booksJA.length());
+			for (int j = 0; j < booksJA.length(); j++)
+			{
+				JSONObject bookDataJO = booksJA.getJSONObject(j);
+				BookData bd = obj.new BookData();
+				bd.name = bookDataJO.optString("name");
+				JSONArray chaptersJA = bookDataJO.optJSONArray("chapters");
+				bd.chapters = new ArrayList<ChapterData>(chaptersJA.length());
+				for (int i = 0; i < chaptersJA.length(); i++)
+				{
+					JSONObject chapterDataJO = chaptersJA.getJSONObject(i);
+					ChapterData cd = obj.new ChapterData();
+					cd.bookName = chapterDataJO.optString("bookName");
+				}
+				obj.books.add(bd);
+			}
+			return obj;
+		}
+		catch (Exception ex)
+		{
+			return null;
+		}
+	}
 }
