@@ -5,34 +5,39 @@ import android.content.Intent;
 import android.os.IBinder;
 
 // Service that runs a simple 'web server' that HearThis desktop can talk to.
-public class SyncService extends Service {
-    public SyncService() {
+public class SyncService extends Service
+{
+    public SyncService()
+	{
     }
 
-    SyncServer _server;
+    SyncServer server;
 
     @Override
-    public IBinder onBind(Intent intent) {
+    public IBinder onBind(Intent intent)
+	{
         return null;
     }
 
     @Override
-    public void onCreate() {
+    public void onCreate()
+	{
         super.onCreate();
 
-        _server = new SyncServer(this);
+        server = new SyncServer(this);
     }
 
     @Override
-    public void onDestroy() {
-        _server.stopThread();
+    public void onDestroy()
+	{
+        server.stopThread();
         super.onDestroy();
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
-        _server.startThread();
+    public int onStartCommand(Intent intent, int flags, int startId)
+	{
+        server.startThread();
         return START_STICKY;
     }
 }
