@@ -1,48 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/mainBackground" >
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			 android:layout_width="match_parent"
+			 android:layout_height="match_parent"
+			 android:background="@color/mainBackground"
+			 android:orientation="vertical"
+>
+<!--
+	<LinearLayout
+		android:id="@+id/controlsRow"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+	>
 
-	android:layout_weight="1"
-
-    <TableRow
-        android:id="@+id/controlsRow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <Button
-            android:id="@+id/openButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/Open" />
-
-        <Button
-            android:id="@+id/publishButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/Publish" />
-
-    </TableRow>
-
-    <TableRow
-        android:id="@+id/booksRow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
- 		android:layout_weight="1"
-        
-        <org.apmem.tools.layouts.FlowLayout
-        	android:id="@+id/booksFlow"
-			xmlns:android="http://schemas.android.com/apk/res/android"
-			android:layout_width="match_parent"
+		<Button
+			android:id="@+id/openButton"
+			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:stretchColumns="*"
-			android:layout_span="2"
+			android:text="@string/Open"
 			android:layout_weight="1"
-		>
-   		</org.apmem.tools.layouts.FlowLayout>
+		/>
 
-    </TableRow>
-
-</TableLayout>
+		<Button
+			android:id="@+id/publishButton"
+			style="?android:attr/buttonStyleSmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="@string/Publish"
+			android:layout_weight="1"
+		/>
+	</LinearLayout>
+-->
+	<GridView
+		android:id="@+id/oldTGrid"
+		android:layout_height="0dp"
+		android:layout_width="match_parent"
+		android:numColumns="4"
+		android:stretchMode="columnWidth"
+		android:layout_weight="1"
+		android:verticalSpacing="8dp"
+		android:horizontalSpacing="8dp"
+	/>
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="8dp"
+		android:background="#ffffffff"
+	/>
+	<GridView
+		android:id="@+id/newTGrid"
+		android:layout_height="0dp"
+		android:layout_width="match_parent"
+		android:numColumns="4"
+		android:stretchMode="columnWidth"
+		android:layout_weight="1"
+		android:verticalSpacing="8dp"
+		android:horizontalSpacing="8dp"
+	/>
+</LinearLayout>
