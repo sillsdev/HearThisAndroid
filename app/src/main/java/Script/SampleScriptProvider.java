@@ -52,7 +52,7 @@ public class SampleScriptProvider implements IScriptProvider {
     }
 
     @Override
-    public String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo) {
+    public String getRecordingFilePath(int bookNumber, int chapter1Based, int blockNo) {
         // Review: this makes it only possible to have one recording with the sample project.
         return "TheOneSampleRecording.mpg4";
     }

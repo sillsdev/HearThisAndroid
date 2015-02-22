@@ -7,8 +7,6 @@ import org.sil.palaso.Graphite;
 
 import Script.BookInfo;
 import Script.IScriptProvider;
-import Script.Project;
-import Script.SampleScriptProvider;
 import Script.ScriptLine;
 import android.app.Activity;
 import android.content.Context;
@@ -176,7 +174,7 @@ public class RecordActivity extends Activity {
 	    }
 	}
 
-	String _fileName = "";
+	String _recordingFilePath = "";
 
 	void startRecording() {
 		if (recorder != null) {
@@ -194,16 +192,15 @@ public class RecordActivity extends Activity {
 		// This combination produces a file that WMP can play.
 		recorder.setOutputFormat(OutputFormat.MPEG_4);
 		recorder.setAudioEncoder(AudioEncoder.AAC);
-		_fileName = _provider.getRecordingFileName(_bookNum, _chapNum, _activeLine);
-		File file = new File(getExternalFilesDir(null), _fileName);
+		_recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, _activeLine);
+		File file = new File(_recordingFilePath);
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
 			recorder.prepare();
 			recorder.start();
 		} catch (IOException e) {
-	//			      Log.e("giftlist", "io problems while preparing [" +
-	//			            file.getAbsolutePath() + "]: " + e.getMessage());
-		}		
+            e.printStackTrace();
+        }
 	}
 	
 	void stopRecording() {
@@ -211,7 +208,7 @@ public class RecordActivity extends Activity {
 		   recorder.stop();
 		   recorder.reset();
 		   recorder.release();
-		   File file = new File(getExternalFilesDir(null), _fileName);
+		   File file = new File(_recordingFilePath);
 		   Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
 		   recorder = null;
            _provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
@@ -229,7 +226,7 @@ public class RecordActivity extends Activity {
 //					+ " of max " + maxVol);
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
 			
-			File file = new File(getExternalFilesDir(null), _fileName);
+			File file = new File(_recordingFilePath);
 			mp.setDataSource(file.getAbsolutePath());
 			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 			mp.prepare();

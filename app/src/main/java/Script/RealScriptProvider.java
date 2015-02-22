@@ -1,5 +1,6 @@
 package Script;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -9,18 +10,21 @@ import org.xml.sax.SAXException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 public class RealScriptProvider implements IScriptProvider {
 	
@@ -33,27 +37,28 @@ public class RealScriptProvider implements IScriptProvider {
 		public int lineCount;
 		public int translatedCount; // not currently accurate; useful only for empty if 0.
 		String[] lines = new String[0];
-        String chapFolder = _path + "/" + bookName + "/" + chapterNumber;
-        String chapInfoFile = chapFolder + "/" + infoFileName;
+        String getChapFolder() {return _path + "/" + bookName + "/" + chapterNumber;}
+        String getChapInfoFile() {return getChapFolder() + "/" + infoFileName;}
 
-        String recordingFileName(int blockNo) {
-            return chapFolder + "/" + blockNo + ".mpg4";
+        String recordingFilePath(int blockNo) {
+            return getChapFolder() + "/" + blockNo + ".mpg4";
         }
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.
 				return lines;
-            File infoFile = new File(chapInfoFile);
+            File infoFile = new File(getChapInfoFile());
             if (infoFile.exists())
             {
                 lines = new String[lineCount];
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();
-                    Document dom = builder.parse(new FileInputStream(chapInfoFile));
+                    Document dom = builder.parse(new FileInputStream(getChapInfoFile()));
                     Element root = dom.getDocumentElement();
                     NodeList source = root.getElementsByTagName("Source");
                     if (source.getLength() == 1) {
-                        NodeList lineNodes = source.item(0).getChildNodes();
+                        // getChildren does not work because it also gets various text (white space) nodes.
+                        NodeList lineNodes = ((Element)source.item(0)).getElementsByTagName("ScriptLine");
                         // Enhance: handle pathological case where lineCount recorded in info.txt
                         // does not match number of ScriptLine elements in Source.
                         for(int i = 0; i < lineNodes.getLength(); i++) {
@@ -113,36 +118,45 @@ public class RealScriptProvider implements IScriptProvider {
         final String lineNoEltName = "LineNumber";
         // When a line is recorded, we want to copy the content to the block that records what
         // was last recorded.
-        void noteLineRecorded(int lineNo)
+        void noteLineRecorded(int lineNoZeroBased)
         {
+            int lineNo = lineNoZeroBased + 1;
             try {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
-                Document dom = builder.parse(new FileInputStream(chapInfoFile));
+                Document dom = builder.parse(new File(getChapInfoFile()));
                 Element root = dom.getDocumentElement();
                 NodeList source = root.getElementsByTagName("Source");
                 if (source.getLength() == 1) {
-                    NodeList lineNodes = source.item(0).getChildNodes();
-                    Element line = (Element)lineNodes.item(lineNo);
+                    NodeList lineNodes = ((Element) source.item(0)).getElementsByTagName("ScriptLine");
+                    Element line = (Element) lineNodes.item(lineNoZeroBased);
                     NodeList recordingsNodes = root.getElementsByTagName(recordingsEltName);
                     Element recording;
                     if (recordingsNodes.getLength() != 0) {
                         recording = (Element) recordingsNodes.item(0);
-                    }
-                    else {
+                    } else {
                         recording = dom.createElement(recordingsEltName);
                         root.appendChild(recording);
                     }
-                    NodeList recordings = recording.getChildNodes();
-                    Node currentRecording = findNodeByEltValue(recordings, lineNoEltName, ""+lineNo);
+                    NodeList recordings = ((Element) recording).getElementsByTagName("ScriptLine");
+                    Node currentRecording = findNodeByEltValue(recordings, lineNoEltName, "" + lineNo);
                     Node newRecording = line.cloneNode(true);
                     if (currentRecording != null) {
                         recording.replaceChild(currentRecording, newRecording);
                     } else {
                         Node insertBefore = findNodeToInsertBefore(recordings, lineNoEltName, lineNo);
-                        recording.insertBefore(insertBefore, newRecording);
+                        recording.insertBefore(newRecording, insertBefore); // insertBefore may be null, means at end.
                     }
                 }
+                new File(getChapInfoFile()).delete();
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                DOMSource domSource = new DOMSource(root);
+                FileOutputStream fos = new FileOutputStream(getChapInfoFile());
+                StreamResult streamResult = new StreamResult(fos);
+                transformer.transform(domSource, streamResult);
+                fos.flush();
+                fos.close();
             }
             catch(IOException e) {
                 e.printStackTrace();
@@ -151,6 +165,13 @@ public class RealScriptProvider implements IScriptProvider {
                 e.printStackTrace();
             }
             catch (SAXException e) {
+                e.printStackTrace();
+            }
+            catch (DOMException e) {
+                e.printStackTrace();
+            } catch (TransformerConfigurationException e) {
+                e.printStackTrace();
+            } catch (TransformerException e) {
                 e.printStackTrace();
             }
         }
@@ -166,14 +187,14 @@ public class RealScriptProvider implements IScriptProvider {
             Element child = findChildByTagName(parent, name);
             if (child == null)
                 return "";
-            return child.getNodeValue();
+            return child.getTextContent();
         }
 
         Node findNodeByEltValue(NodeList nodes, String childName, String val)
         {
             for (int i = 0; i < nodes.getLength(); i++) {
                 Element item = (Element)nodes.item(i);
-                if (findChildContentByTagName(item, childName) == val)
+                if (findChildContentByTagName(item, childName).equals(val))
                     return item;
             }
             return null;
@@ -286,11 +307,11 @@ public class RealScriptProvider implements IScriptProvider {
     }
 
     @Override
-    public String getRecordingFileName(int bookNumber, int chapter1Based, int blockNo) {
+    public String getRecordingFilePath(int bookNumber, int chapter1Based, int blockNo) {
         ChapterData chap = GetChapter(bookNumber, chapter1Based);
         if (chap == null)
             return null; // or throw??
-        return chap.recordingFileName(blockNo);
+        return chap.recordingFilePath(blockNo);
     }
 
 }
