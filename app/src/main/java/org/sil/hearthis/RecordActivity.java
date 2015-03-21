@@ -41,7 +41,11 @@ public class RecordActivity extends Activity {
     int _bookNum;
     int _chapNum;
     IScriptProvider _provider;
-	
+
+    static final String BOOK_NUM = "bookNumber";
+    static final String CHAP_NUM = "chapterNumber";
+    static final String ACTIVE_LINE = "activeLine";
+
 	Typeface mtfl;
 	
 	MediaRecorder recorder = null;
@@ -56,12 +60,22 @@ public class RecordActivity extends Activity {
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
 		BookInfo book = (BookInfo)extras.get("bookInfo");
-		_chapNum = extras.getInt("chapter");
-		_bookNum = book.BookNumber;
-	    _provider = book.getScriptProvider();
-		_lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
-		_activeLine = 0;
-		
+        if (book != null) {
+            // invoked from chapter page
+            _chapNum = extras.getInt("chapter");
+            _bookNum = book.BookNumber;
+            _provider = book.getScriptProvider();
+            _activeLine = 0;
+        }
+        else {
+            // re-created, maybe after rotate, maybe eventually we start up here?
+            _chapNum = savedInstanceState.getInt(CHAP_NUM);
+            _bookNum = savedInstanceState.getInt(BOOK_NUM);
+            _activeLine = savedInstanceState.getInt(ACTIVE_LINE);
+            _provider = MainActivity.GetProvider(this);
+        }
+        _lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
+
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		_linesView = (ViewGroup) findViewById(R.id.textLineHolder);
 		_linesView.removeAllViews();
@@ -112,6 +126,14 @@ public class RecordActivity extends Activity {
 			}
 		});
 	}
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putInt(CHAP_NUM,_chapNum);
+        savedInstanceState.putInt(BOOK_NUM,_bookNum);
+        savedInstanceState.putInt(ACTIVE_LINE,_activeLine);
+        super.onSaveInstanceState(savedInstanceState);
+    }
 	
 	void nextButtonClicked() {
 		if (_activeLine >= _lineCount-1) {

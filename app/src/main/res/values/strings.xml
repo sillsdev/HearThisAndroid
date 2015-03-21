@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">HearThis</string>
-    <string name="sync_message">Ready to sync with the desktop application. Click the Android button in HearThis on your main computer.</string>
+    <string name="sync_message">Ready to sync with the desktop application. Click the Android button in HearThis on your main computer. Then click the scan button and scan the bar code on the desktop.</string>
     <string name="sync_desktop">Sync with desktop application</string>
     <string name="Open">Open</string>
     <string name="Publish">Publish</string>
@@ -11,5 +11,6 @@
     <string name="Next">Next</string>
     <string name="title_activity_sync">SyncActivity</string>
     <string name="action_settings">Settings</string>
+    <string name="scan">Scan</string>
 
 </resources>
