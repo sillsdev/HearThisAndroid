@@ -1,7 +1,8 @@
 package org.sil.hearthis;
 
-import org.sil.hearthis.R;
 import Script.BookInfo;
+import Script.IScriptProvider;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -62,6 +63,8 @@ public class BookButton  extends View {
 		_textPaint = new Paint();
 		_textPaint.setColor(getResources().getColor(R.color.navButtonTextColor));
 		_textPaint.setTextAlign(Paint.Align.CENTER);
+        _highlitePaint = new Paint();
+        _highlitePaint.setColor(getResources().getColor(R.color.navButtonHiliteColor));
 	}
 
 	@Override
@@ -96,6 +99,25 @@ public class BookButton  extends View {
         	abbr = abbr.substring(0,1).toUpperCase() + abbr.substring(1);
         }
 		canvas.drawText(abbr, (right - left)/2, (bottom - top)/2, _textPaint);
+
+        BookInfo book = (BookInfo)this.Model;
+        IScriptProvider provider = book.getScriptProvider();
+        int transLines = provider.GetTranslatedLineCount(book.BookNumber);
+        int actualLines = provider.GetScriptLineCount(book.BookNumber);
+        if (actualLines > 0 && transLines == actualLines) {
+            int mid = (bottom - top) / 2;
+            int leftTick = mid / 5;
+            int halfWidth = mid / 3;
+            int v1 = mid + halfWidth * 2 / 3;
+            int v2 = mid + halfWidth * 5 / 3;
+            int v3 = mid - halfWidth * 4 / 3;
+
+            //draw the first stroke of a check mark
+            _highlitePaint.setStrokeWidth((float)4.0);
+            canvas.drawLine(leftTick, v1, leftTick+halfWidth, v2, _highlitePaint);
+            //complete the checkmark
+            canvas.drawLine(leftTick+halfWidth, v2, leftTick + halfWidth * 2, v3, _highlitePaint);
+        }
 	}
 
 }
