@@ -8,7 +8,8 @@ public interface IScriptProvider {
 
    // string[] GetLines(int bookNumber, int chapter1Based);
     int GetScriptLineCount(int bookNumber, int chapter1Based);
-    int GetTranslatedVerseCount(int bookNumberDelegateSafe, int chapterNumber1Based);
+    int GetTranslatedLineCount(int bookNumber);
+    int GetTranslatedLineCount(int bookNumberDelegateSafe, int chapterNumber1Based);
     int GetScriptLineCount(int bookNumber);
     void LoadBook(int bookNumber0Based);
     String getEthnologueCode();

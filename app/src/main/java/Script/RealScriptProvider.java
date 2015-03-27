@@ -269,12 +269,21 @@ public class RealScriptProvider implements IScriptProvider {
 	}
 
 	@Override
-	public int GetTranslatedVerseCount(int bookNumber, int chapter1Based) {
+	public int GetTranslatedLineCount(int bookNumber, int chapter1Based) {
 		ChapterData chap = GetChapter(bookNumber, chapter1Based);
 		if (chap == null)
 			return 0;
 		return chap.translatedCount;
 	}
+
+    @Override
+    public int GetTranslatedLineCount(int bookNumber) {
+        BookData book = Books.get(bookNumber);
+        int total = 0;
+        for (int i = 0; i < book.chapters.size(); i++)
+            total += GetTranslatedLineCount(bookNumber, i);
+        return total;
+    }
 
 	@Override
 	public int GetScriptLineCount(int bookNumber) {

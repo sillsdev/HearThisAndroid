@@ -22,11 +22,17 @@ public class SampleScriptProvider implements IScriptProvider {
 	}
 
 	@Override
-	public int GetTranslatedVerseCount(int bookNumberDelegateSafe,
-			int chapterNumber1Based) {
+	public int GetTranslatedLineCount(int bookNumberDelegateSafe,
+                                      int chapterNumber1Based) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+
+    @Override
+    public int GetTranslatedLineCount(int bookNumberDelegateSafe) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 	@Override
 	public int GetScriptLineCount(int bookNumber) {
