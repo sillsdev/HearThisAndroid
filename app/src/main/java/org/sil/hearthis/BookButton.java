@@ -67,10 +67,10 @@ public class BookButton  extends View {
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 	   // Try for a width based on our minimum
-	   int minw = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth();
+	   int minw = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth() * 5/4;
 	   int kMaxChapters = 150;//psalms
-	   int w = (int) (minw + ((double)Model.ChapterCount / (double)kMaxChapters) * 33.0);
-	   int h = getPaddingBottom() + getPaddingTop() + getSuggestedMinimumHeight();
+	   int w = (int) (minw + ((double)Model.ChapterCount / (double)kMaxChapters) * 150.0);
+	   int h = getPaddingBottom() + getPaddingTop() + getSuggestedMinimumHeight() * 3 / 2;
 
 	   setMeasuredDimension(w, h);
 	}
