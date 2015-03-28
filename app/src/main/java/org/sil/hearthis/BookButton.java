@@ -21,38 +21,38 @@ public class BookButton  extends ProgressButton {
 
     @Override
     protected int getForeColor() {
-        int navbuttoncolor = R.color.navButtonColor;
+        if (Model.getScriptProvider().GetTranslatedLineCount(Model.BookNumber) == 0)
+            return R.color.navButtonUntranslatedColor;
         if (Model.BookNumber < 5) {
-            navbuttoncolor = R.color.navButtonLawColor;
+            return R.color.navButtonLawColor;
         }
         else if (Model.BookNumber < 17) {
-            navbuttoncolor = R.color.navButtonHistoryColor;
+            return R.color.navButtonHistoryColor;
         }
         else if (Model.BookNumber < 22) {
-            navbuttoncolor = R.color.navButtonPoetryColor;
+            return R.color.navButtonPoetryColor;
         }
         else if (Model.BookNumber < 27) {
-            navbuttoncolor = R.color.navButtonMajorProphetColor;
+            return R.color.navButtonMajorProphetColor;
         }
         else if (Model.BookNumber < 39) {
-            navbuttoncolor = R.color.navButtonMinorProphetColor;
+            return R.color.navButtonMinorProphetColor;
         }
         else if (Model.BookNumber < 43) {
-            navbuttoncolor = R.color.navButtonGospelsColor;
+            return R.color.navButtonGospelsColor;
         }
         else if (Model.BookNumber < 44) {
-            navbuttoncolor = R.color.navButtonActsColor;
+            return R.color.navButtonActsColor;
         }
         else if (Model.BookNumber < 57) {
-            navbuttoncolor = R.color.navButtonPaulineColor;
+            return R.color.navButtonPaulineColor;
         }
         else if (Model.BookNumber < 65) {
-            navbuttoncolor = R.color.navButtonEpistlesColor;
+            return R.color.navButtonEpistlesColor;
         }
         else {
-            navbuttoncolor = R.color.navButtonRevelationColor;
+            return R.color.navButtonRevelationColor;
         }
-        return navbuttoncolor;
     }
 
     @Override

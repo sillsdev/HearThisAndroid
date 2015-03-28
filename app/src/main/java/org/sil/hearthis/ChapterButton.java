@@ -35,4 +35,11 @@ public class ChapterButton extends ProgressButton {
     protected String getLabel() {
         return Integer.toString(chapterNumber);
     }
+
+    @Override
+    protected int getForeColor() {
+        if (scriptProvider.GetTranslatedLineCount(bookNumber, chapterNumber) == 0)
+            return R.color.navButtonUntranslatedColor;
+        return super.getForeColor();
+    }
 }
