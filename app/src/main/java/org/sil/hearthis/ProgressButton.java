@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 
 /**
@@ -29,6 +30,9 @@ public abstract class ProgressButton extends View {
         _textPaint = new Paint();
         _textPaint.setColor(getResources().getColor(R.color.navButtonTextColor));
         _textPaint.setTextAlign(Paint.Align.CENTER);
+        int fontSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                16, getResources().getDisplayMetrics());
+        _textPaint.setTextSize(fontSize);
         _highlitePaint = new Paint();
         _highlitePaint.setColor(getResources().getColor(R.color.navButtonHiliteColor));
     }
@@ -66,7 +70,10 @@ public abstract class ProgressButton extends View {
         int top = this.getTop();
         Rect r = new Rect(2, 3, right - left - 2, bottom - top - 2);
         canvas.drawRect(r, _forePaint);
-        canvas.drawText(getLabel(), (right - left)/2, (bottom - top)/2, _textPaint);
+        // Logic would suggest vertical position of (bottom - top)/2, but centering
+        // seems to align baseline, so that works out a bit high. 3/5 seems to produce
+        // something that actually looks centered.
+        canvas.drawText(getLabel(), (right - left)/2, (bottom - top)*3/5, _textPaint);
 
         if (isAllRecorded()) {
             int mid = (bottom - top) / 2;
