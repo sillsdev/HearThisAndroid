@@ -29,8 +29,8 @@ public class ChooseChapterActivity extends Activity {
 		ViewGroup chapsFlow = (ViewGroup) findViewById(R.id.chapsFlow);
 		chapsFlow.removeAllViews();
 		for (int i = 0; i <= book.ChapterCount; i++) {
-			Button chapButton = (Button) inflater.inflate(R.layout.chap_button, null);
-			chapButton.setText(Integer.toString(i));
+            ChapterButton chapButton = (ChapterButton) inflater.inflate(R.layout.chap_button, null);
+			chapButton.init(book.getScriptProvider(), book.BookNumber, i);
 			final int safeChapNum = i;
 			chapButton.setOnClickListener(new android.view.View.OnClickListener() {
 				
