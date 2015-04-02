@@ -72,7 +72,7 @@ public class RecordActivity extends Activity {
             _chapNum = savedInstanceState.getInt(CHAP_NUM);
             _bookNum = savedInstanceState.getInt(BOOK_NUM);
             _activeLine = savedInstanceState.getInt(ACTIVE_LINE);
-            _provider = MainActivity.GetProvider(this);
+            _provider = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
         }
         _lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 

@@ -30,20 +30,10 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
         Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
-		// Todo: scan org.sil.hearthis/files for folders containing info.txt and open first
-		// Todo: remember last project
-		// Todo: if no real project available use SampleScriptProvider.
-		IScriptProvider scripture = GetProvider(this);
+        IScriptProvider scripture = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
 		Project project = new Project("Sample", scripture);
 		setProject(project);
 	}
-
-    public static IScriptProvider GetProvider(Activity activity)
-    {
-        // Todo: Dhh is just for testing, eventually we have to pick a project if there is
-        // more than one, do something appropriate if there are none. Maybe go right to sync?
-        return new RealScriptProvider(activity.getExternalFilesDir(null) + "/" + "Dhh");
-    }
 	
 	public void setProject(Project project) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
