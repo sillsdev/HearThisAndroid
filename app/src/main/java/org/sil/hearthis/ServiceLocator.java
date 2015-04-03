@@ -4,7 +4,9 @@ import android.app.Activity;
 
 import java.io.File;
 
+import Script.IFileSystem;
 import Script.IScriptProvider;
+import Script.RealFileSystem;
 import Script.RealScriptProvider;
 
 /**
@@ -14,8 +16,9 @@ import Script.RealScriptProvider;
  * for testing.
  */
 public class ServiceLocator {
-    File externalFilesDirectory;
+    String externalFilesDirectory;
     IScriptProvider scriptProvider;
+    IFileSystem fileSystem;
     static ServiceLocator theOneInstance = new ServiceLocator();
 
     // When you need the service locator call this to get it.
@@ -25,8 +28,23 @@ public class ServiceLocator {
     // initialize various things. Test code may instead install various stubs.
     // Returns this for convenient chaining.
     public ServiceLocator init(Activity activity) {
-        externalFilesDirectory = activity.getExternalFilesDir(null);
+        externalFilesDirectory = activity.getExternalFilesDir(null).toString();
         return this;
+    }
+
+    // Init function only for testing.
+    public ServiceLocator testInit(String exFileDir) {
+        externalFilesDirectory = exFileDir;
+        return this;
+    }
+
+    public IFileSystem getFileSystem() {
+        if (fileSystem == null)
+            fileSystem = new RealFileSystem();
+        return fileSystem;
+    }
+    public void setFileSystem(IFileSystem fs) {
+        fileSystem = fs;
     }
 
     public IScriptProvider getScriptProvider() {

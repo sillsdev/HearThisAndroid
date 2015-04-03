@@ -1,5 +1,6 @@
 package Script;
 
+import org.sil.hearthis.ServiceLocator;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -13,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,9 @@ public class RealScriptProvider implements IScriptProvider {
 	String _path;
 	List<BookData> Books = new ArrayList<BookData>();
     public String infoFileName = "info.xml";
+    IFileSystem getFileSystem() {
+        return ServiceLocator.getServiceLocator().getFileSystem();
+    }
 	class ChapterData {
 		public String bookName;
 		public int chapterNumber;
@@ -46,14 +51,13 @@ public class RealScriptProvider implements IScriptProvider {
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.
 				return lines;
-            File infoFile = new File(getChapInfoFile());
-            if (infoFile.exists())
+            if (getFileSystem().FileExists(getChapInfoFile()))
             {
                 lines = new String[lineCount];
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();
-                    Document dom = builder.parse(new FileInputStream(getChapInfoFile()));
+                    Document dom = builder.parse(getFileSystem().ReadFile(getChapInfoFile()));
                     Element root = dom.getDocumentElement();
                     NodeList source = root.getElementsByTagName("Source");
                     if (source.getLength() == 1) {
@@ -124,7 +128,7 @@ public class RealScriptProvider implements IScriptProvider {
             try {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
-                Document dom = builder.parse(new File(getChapInfoFile()));
+                Document dom = builder.parse(getFileSystem().ReadFile(getChapInfoFile()));
                 Element root = dom.getDocumentElement();
                 NodeList source = root.getElementsByTagName("Source");
                 if (source.getLength() == 1) {
@@ -148,11 +152,11 @@ public class RealScriptProvider implements IScriptProvider {
                         recording.insertBefore(newRecording, insertBefore); // insertBefore may be null, means at end.
                     }
                 }
-                new File(getChapInfoFile()).delete();
+                getFileSystem().Delete(getChapInfoFile());
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
                 Transformer transformer = transformerFactory.newTransformer();
                 DOMSource domSource = new DOMSource(root);
-                FileOutputStream fos = new FileOutputStream(getChapInfoFile());
+                OutputStream fos = getFileSystem().WriteFile(getChapInfoFile());
                 StreamResult streamResult = new StreamResult(fos);
                 transformer.transform(domSource, streamResult);
                 fos.flush();
@@ -219,7 +223,7 @@ public class RealScriptProvider implements IScriptProvider {
 		_path = path;
 		try	{
 			String infoPath = path + "/info.txt";
-			BufferedReader buf = new BufferedReader(new InputStreamReader(new FileInputStream(infoPath),"UTF-8"));
+			BufferedReader buf = new BufferedReader(new InputStreamReader(getFileSystem().ReadFile(infoPath),"UTF-8"));
 			int ibook = 0;
 			for (String line = buf.readLine(); line != null; ibook++, line = buf.readLine()) {
 				String[] parts = line.split(";");
