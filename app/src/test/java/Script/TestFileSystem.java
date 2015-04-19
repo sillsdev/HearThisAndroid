@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
@@ -17,6 +18,12 @@ public class TestFileSystem implements IFileSystem {
     HashMap<String, String> files = new HashMap<String, String>();
 
     public String externalFilesDirectory;
+
+    public String project;
+
+    public String getProjectDirectory() {
+        return externalFilesDirectory + "/" + project;
+    }
 
     @Override
     public boolean FileExists(String path) {
@@ -30,7 +37,13 @@ public class TestFileSystem implements IFileSystem {
     @Override
     public InputStream ReadFile(String path) throws FileNotFoundException {
         String content = files.get(path);
+        // This is not supported by the minimum Android version I'm targeting,
+        // but this code only has to work for testing.
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String getFile(String path) {
+        return files.get(path);
     }
 
     @Override
@@ -59,7 +72,7 @@ public class TestFileSystem implements IFileSystem {
         @Override
         public void close() throws IOException {
             super.close(); // officially does nothing, but for consistency.
-            parent.WriteStreamClosed(path, this.toString("UTF_8"));
+            parent.WriteStreamClosed(path, this.toString("UTF-8"));
         }
     }
 }

@@ -146,7 +146,7 @@ public class RealScriptProvider implements IScriptProvider {
                     Node currentRecording = findNodeByEltValue(recordings, lineNoEltName, "" + lineNo);
                     Node newRecording = line.cloneNode(true);
                     if (currentRecording != null) {
-                        recording.replaceChild(currentRecording, newRecording);
+                        recording.replaceChild(newRecording, currentRecording);
                     } else {
                         Node insertBefore = findNodeToInsertBefore(recordings, lineNoEltName, lineNo);
                         recording.insertBefore(newRecording, insertBefore); // insertBefore may be null, means at end.
