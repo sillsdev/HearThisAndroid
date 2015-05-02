@@ -4,6 +4,7 @@ import android.app.Activity;
 
 import java.io.File;
 
+import Script.FileSystem;
 import Script.IFileSystem;
 import Script.IScriptProvider;
 import Script.RealFileSystem;
@@ -18,7 +19,7 @@ import Script.RealScriptProvider;
 public class ServiceLocator {
     String externalFilesDirectory;
     IScriptProvider scriptProvider;
-    IFileSystem fileSystem;
+    FileSystem fileSystem;
     static ServiceLocator theOneInstance = new ServiceLocator();
 
     // When you need the service locator call this to get it.
@@ -38,12 +39,12 @@ public class ServiceLocator {
         return this;
     }
 
-    public IFileSystem getFileSystem() {
+    public FileSystem getFileSystem() {
         if (fileSystem == null)
-            fileSystem = new RealFileSystem();
+            fileSystem = new FileSystem(new RealFileSystem());
         return fileSystem;
     }
-    public void setFileSystem(IFileSystem fs) {
+    public void setFileSystem(FileSystem fs) {
         fileSystem = fs;
     }
 

@@ -24,6 +24,7 @@ public class TestFileSystem implements IFileSystem {
     public String getProjectDirectory() {
         return externalFilesDirectory + "/" + project;
     }
+    public String getInfoTxtPath() { return getProjectDirectory() + "/info.txt";}
 
     @Override
     public boolean FileExists(String path) {

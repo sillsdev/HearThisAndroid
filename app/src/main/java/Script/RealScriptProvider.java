@@ -33,7 +33,7 @@ public class RealScriptProvider implements IScriptProvider {
 	String _path;
 	List<BookData> Books = new ArrayList<BookData>();
     public String infoFileName = "info.xml";
-    IFileSystem getFileSystem() {
+    FileSystem getFileSystem() {
         return ServiceLocator.getServiceLocator().getFileSystem();
     }
 	class ChapterData {
@@ -150,6 +150,9 @@ public class RealScriptProvider implements IScriptProvider {
                     } else {
                         Node insertBefore = findNodeToInsertBefore(recordings, lineNoEltName, lineNo);
                         recording.insertBefore(newRecording, insertBefore); // insertBefore may be null, means at end.
+                        String infoTxt = getFileSystem().getFile(getInfoTxtPath());
+                        String updated = incrementRecordingCount(infoTxt);
+                        getFileSystem().putFile(getInfoTxtPath(), updated);
                     }
                 }
                 getFileSystem().Delete(getChapInfoFile());
@@ -178,6 +181,41 @@ public class RealScriptProvider implements IScriptProvider {
             } catch (TransformerException e) {
                 e.printStackTrace();
             }
+        }
+
+        String incrementRecordingCount(String oldInfoTxt)
+        {
+            String ls = System.getProperty("line.separator");
+            String[] lines = oldInfoTxt.split(ls);
+            StringBuilder sb = new StringBuilder();
+            for(String line: lines) {
+                String[] parts = line.split(";");
+                if (!(parts[0].equals(bookName))) {
+                    sb.append(line);
+                    sb.append(ls);
+                    continue;
+                }
+                String[] counts = parts[1].split(",");
+                String myCount = counts[chapterNumber];
+                String[] sourceRec = myCount.split(":");
+                int recCount = Integer.parseInt(sourceRec[1]);
+                recCount++;
+                sb.append(bookName);
+                sb.append(";");
+                for (int i = 0; i < chapterNumber; i++) {
+                    sb.append(counts[i]);
+                    sb.append(",");
+                }
+                sb.append(sourceRec[0]);
+                sb.append(":");
+                sb.append(recCount);
+                for (int i = chapterNumber + 1; i < counts.length; i++) {
+                    sb.append(",");
+                    sb.append(counts[i]);
+                }
+                sb.append(ls);
+            }
+            return sb.toString();
         }
 
         Element findChildByTagName(Element parent, String name) {
@@ -222,8 +260,7 @@ public class RealScriptProvider implements IScriptProvider {
 	public RealScriptProvider(String path) {
 		_path = path;
 		try	{
-			String infoPath = path + "/info.txt";
-			BufferedReader buf = new BufferedReader(new InputStreamReader(getFileSystem().ReadFile(infoPath),"UTF-8"));
+            BufferedReader buf = new BufferedReader(new InputStreamReader(getFileSystem().ReadFile(getInfoTxtPath()),"UTF-8"));
 			int ibook = 0;
 			for (String line = buf.readLine(); line != null; ibook++, line = buf.readLine()) {
 				String[] parts = line.split(";");
@@ -248,7 +285,11 @@ public class RealScriptProvider implements IScriptProvider {
 		}
 	}
 
-	@Override
+    private String getInfoTxtPath() {
+        return _path + "/info.txt";
+    }
+
+    @Override
 	public ScriptLine GetLine(int bookNumber, int chapter1Based,
 			int lineNumber0Based) {
 		ChapterData chapter = GetChapter(bookNumber, chapter1Based);

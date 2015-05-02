@@ -58,11 +58,10 @@ public class RealScriptProviderTest {
         fs = new TestFileSystem();
         fs.externalFilesDirectory = "root";
         fs.project = "test";
-        String projPrefix = fs.getProjectDirectory();
-        fs.SimulateFile(projPrefix + "/info.txt", genEx);
+        fs.SimulateFile(fs.getInfoTxtPath(), genEx);
 
-        ServiceLocator.getServiceLocator().setFileSystem(fs);
-        return new RealScriptProvider(projPrefix);
+        ServiceLocator.getServiceLocator().setFileSystem(new FileSystem(fs));
+        return new RealScriptProvider(fs.getProjectDirectory());
     }
 
     String ex0 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -122,6 +121,21 @@ public class RealScriptProviderTest {
         Element line = findNthChild(recording, 0, 1, "ScriptLine");
         verifyChildContent(line, "LineNumber", "3");
         verifyChildContent(line, "Text", "Some Introduction Second");
+        verifyRecordingCount(1, 0, 1);
+    }
+
+    void verifyRecordingCount(int bookNum, int chapNum, int count)
+    {
+        String infoTxt = fs.getFile(fs.getInfoTxtPath());
+        String[] lines = infoTxt.split("\\n");
+        assertTrue("not enough lines in infoTxt", lines.length >= bookNum);
+        String bookLine = lines[bookNum]; // Like Exodus;3:0,10:5
+        String[] counts = bookLine.split(";")[1].split(",");
+        assertTrue("not enough chapters in counts", counts.length >= chapNum);
+        String chapData = counts[chapNum];
+        String recCount = chapData.split(":")[1];
+        int recordings = Integer.parseInt(recCount);
+        assertEquals("wrong number of recordings", count, recordings);
     }
 
     @Test
