@@ -29,7 +29,8 @@ public class ServiceLocator {
     // initialize various things. Test code may instead install various stubs.
     // Returns this for convenient chaining.
     public ServiceLocator init(Activity activity) {
-        externalFilesDirectory = activity.getExternalFilesDir(null).toString();
+        if (externalFilesDirectory == null)
+            externalFilesDirectory = activity.getExternalFilesDir(null).toString();
         return this;
     }
 

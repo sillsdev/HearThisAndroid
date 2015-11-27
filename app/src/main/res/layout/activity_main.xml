@@ -5,43 +5,27 @@
     android:background="@color/mainBackground" >
 
 	android:layout_weight="1"
-
     <TableRow
-        android:id="@+id/controlsRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="match_parent">
 
-        <Button
-            android:id="@+id/openButton"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/Open" />
-
-        <Button
-            android:id="@+id/publishButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/Publish" />
-
+            android:text="@string/noProject"
+            android:textColor="@color/defaultTextColor"
+            android:id="@+id/textView" />
     </TableRow>
-
     <TableRow
-        android:id="@+id/booksRow"
+        android:id="@+id/mainControlsRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
- 		android:layout_weight="1"
-        
-        <org.apmem.tools.layouts.FlowLayout
-        	android:id="@+id/booksFlow"
-			xmlns:android="http://schemas.android.com/apk/res/android"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:stretchColumns="*"
-			android:layout_span="2"
-			android:layout_weight="1"
-		>
-   		</org.apmem.tools.layouts.FlowLayout>
+
+        <Button
+            android:id="@+id/mainSyncButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sync_desktop" />
 
     </TableRow>
 

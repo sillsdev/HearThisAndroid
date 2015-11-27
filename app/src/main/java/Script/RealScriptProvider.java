@@ -260,6 +260,8 @@ public class RealScriptProvider implements IScriptProvider {
 	public RealScriptProvider(String path) {
 		_path = path;
 		try	{
+            if (!getFileSystem().FileExists(getInfoTxtPath()))
+                return; // no info about any books, leave the collection empty.
             BufferedReader buf = new BufferedReader(new InputStreamReader(getFileSystem().ReadFile(getInfoTxtPath()),"UTF-8"));
 			int ibook = 0;
 			for (String line = buf.readLine(); line != null; ibook++, line = buf.readLine()) {

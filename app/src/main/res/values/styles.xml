@@ -35,6 +35,6 @@
     <color name="navButtonEpistlesColor">#353870</color>
     <color name="navButtonRevelationColor">#232653</color>
     <color name="navButtonUntranslatedColor">#5F5F5F</color>"
-    
+    <color name="defaultTextColor">#FFF</color> <!-- Not sure this is what I wanted...accidental undo lost original-->
 
 </resources>

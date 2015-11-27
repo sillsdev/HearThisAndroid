@@ -30,45 +30,10 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
         Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
-        IScriptProvider scripture = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
-		Project project = new Project("Sample", scripture);
-		setProject(project);
+		ServiceLocator.getServiceLocator().init(this);
+		Intent chooseBook = new Intent(MainActivity.this, ChooseBookActivity.class);
+		startActivity(chooseBook);
 	}
 	
-	public void setProject(Project project) {
-		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		ViewGroup bookFlow = (ViewGroup) findViewById(R.id.booksFlow);
-		for (BookInfo book : project.Books) {
-			int resid = R.layout.book_button;
-			if (book.BookNumber == 39) {
-				// Matthew: start new line
-				resid = R.layout.newline_book_button;
-			}
-			
-			// This next line is rather non-obvious. We must pass the bookFlow to the inflator
-			// so that it can be used to create the Layout for the button: a custom layout which implements
-			// the extra properties that the FlowLayout recognizes for its children like newline.
-			// But, when we pass a parent, without the third argument inflate adds the button to the
-			// flowLayout itself and returns the parent. That leaves us without an easy way to get the
-			// new button, on which we want to set other properties. So we pass false (do not add
-			// to parent) and thus get the button itself back from inflate. Then of course we must
-			// add it to the parent ourselves.
-			BookButton bookButton = (BookButton)inflater.inflate(resid, bookFlow, false);
-			bookButton.Model = book;
-			bookButton.setOnClickListener(bookButtonListener);
-			bookButton.setTag(book);
-			bookFlow.addView(bookButton);
-		}
-	}
-	
-	public android.view.View.OnClickListener bookButtonListener = new android.view.View.OnClickListener() {
-		
-		@Override
-		public void onClick(View v) {
-			BookInfo book = (BookInfo)v.getTag();
-			Intent chooseChapter = new Intent(MainActivity.this, ChooseChapterActivity.class);
-			chooseChapter.putExtra("bookInfo", book);
-			startActivity(chooseChapter);
-		}
-	};
+
 }
