@@ -5,6 +5,8 @@ import org.sil.hearthis.R;
 import org.sil.palaso.Graphite;
 
 import Script.BookInfo;
+import Script.FileSystem;
+import Script.IFileSystem;
 import Script.IScriptProvider;
 import Script.Project;
 import Script.RealScriptProvider;
@@ -23,6 +25,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import java.util.ArrayList;
+
 public class MainActivity extends Activity {
 
 	@Override
@@ -31,6 +35,11 @@ public class MainActivity extends Activity {
         Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
 		ServiceLocator.getServiceLocator().init(this);
+		FileSystem fs = ServiceLocator.getServiceLocator().fileSystem;
+		String rootDir = ServiceLocator.getServiceLocator().externalFilesDirectory;
+		ArrayList<String> rootDirs = fs.getDirectories(rootDir);
+		if (rootDirs.isEmpty())
+			return; // Leave the main activity active (allows user to sync a project).
 		Intent chooseBook = new Intent(MainActivity.this, ChooseBookActivity.class);
 		startActivity(chooseBook);
 	}

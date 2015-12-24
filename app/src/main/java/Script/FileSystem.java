@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 /**
  * This class implements a more complete set of FileSystem methods on top of a (real or test)
@@ -38,6 +39,11 @@ public class FileSystem implements IFileSystem {
     @Override
     public void Delete(String path) {
         core.Delete(path);
+    }
+
+    @Override
+    public ArrayList<String> getDirectories(String path) {
+        return core.getDirectories(path);
     }
 
     public String getFile(String path) throws IOException {
