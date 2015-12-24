@@ -1,0 +1,103 @@
+Notes on building HearThisAndroid with unit tests for activity
+
+- there are two places minSdkVersion is set, at least one can't be less than 18:
+> java.lang.RuntimeException: Manifest merger failed : uses-sdk:minSdkVersion 10 cannot be smaller than version 18 declared in library [com.android.support.test.uiautomator:uiautomator-v18:2.1.2] C:\Users\thomson\AndroidstudioProjects\HearThisAndroid\app\build\intermediates\exploded-aar\com.android.support.test.uiautomator\uiautomator-v18\2.1.2\AndroidManifest.xml
+	Suggestion: use tools:overrideLibrary="android.support.test.uiautomator.v18" to force usage
+
+- also need to be consistent about what sdkversion we are 'targeting'.
+- Can't target 23 until we switch libraries for http.
+
+Briefly, it Rebuild project apparently succeeded.
+Then tried to run test, got 14 build errors!
+First is in ChooseBookActivity, claims AppCompatActivity is unknown.
+No idea where I got the idea of extending that, ChooseBookActivity is a new class and no other activity extends this.
+Changed to Activity
+Another Rebuild now fails, but that error is gone. Now
+MainActivityTest does not build...org.mockito.Mockito does not exist
+  - for now, comment out stuff that uses it.
+Also, my TestFileSystem class was in the uninstrumented test section. Copied it to the androidTest folder. Ugh.
+Now Rebuild claims to succeed.
+Tried running again. Now says, Failed to start. Run window shows JUnit 3.8 or later expected.
+java.lang.RuntimeException: Stub!
+	at junit.runner.BaseTestRunner.<init>(BaseTestRunner.java:5)
+	at junit.textui.TestRunner.<init>(TestRunner.java:54)
+	at junit.textui.TestRunner.<init>(TestRunner.java:48)
+	at junit.textui.TestRunner.<init>(TestRunner.java:41)
+testCompile in build.gradle says I am using JUnit 4.12, so that should be OK.
+
+http://stackoverflow.com/questions/2422378/intellij-idea-with-junit-4-7-junit-version-3-8-or-later-expected gives a clue
+- following that suggestion (roughly) I went to File/Program Structure, chose app at the bottom of the list on the left, Depenencies tab, and moved junit:junit:4.12 to the top (I think it was previously at the top of the Test Compile group). This made no discernable difference.
+
+Following an idea suggested by http://stackoverflow.com/questions/29172698/junit-version-3-8-or-later-expected,
+
+I went to Run/Edit configurations, selected Junit on left, and (in Configuration tab) changed 'Use classpath of module' to HearThisAndroid (I think it was previously app). The menu option to 'run tests' now disappeared. Trying "Run org.sil.hearthis in..." it launched an emulator (without offering another option), said something about it being out of date, and told me to update it. UpdateCheck says latest emulator is 24.4.0, so I suspect it is actually too new, since I'm targeting 19.
+
+Can't find any way to kill the emulator. Where the close box should be is off-screen. Process explorer describes the process as 5554:Nexus_5API_21_x86. That suggests it's an api21 emulator, still too new. Used Process Explorer to kill it.
+
+Used Run/Run... to actually run app on my phone. This worked.
+
+Went back to Run menu, wanted to Run... to try again running tests. Run... is gone. Don't know why. Probably because the app is still running. Found a button in the lower left to terminate app (a white x in a red circle). Can't tell what it is part of. It failed to terminate the app. But the Run... menu option returned.
+
+Under Run...I found an option to run MainActivityTest. Did so. Failed claiming no tests found.
+
+Tried it a couple more ways (right click in MainActivityTest/Run MainActivityTest and Run/Run MainActivityTest. Both give the message about expecting JUnit  3.8 or later. Using Run...again still claims no tests found. After doing this Run... is gone again.
+
+There is a separate JUnit configuration that specifically indicates it is for running MainActivityOnCreate. Configuration says it is a Method configuration for class MainActifityText method testOnCreate. Initially set to use classPath of app. Tried changing this to use classPath of HearThisAndroid.
+
+Looking further at Run/Edit Configurations, there are at least four that seem aimed at running tests. The one in Android Tests for testOnCreate was trying to run a method from the obsolete class MainActivityTest2. Changed it to MainActivityTest. Run now has an option for testOnCreate. Fails, trying to run emulator and finding it can't update it to 19.
+
+Switched that configuration to ask which device, and ran again. Succeeded in running something on my phone. Got a stack dump. It actually executed my method; haven't gotten that far for a while. Fails in startActivity, something can't be null.
+
+http://stackoverflow.com/questions/27991363/activityunittestcase-throws-runtimeexception-when-ran-with-androidjunitrunner says that no new Handlers can be created from the instrumentation thread. Which means startActivity() must be invoked in the UI thread. He suggests three solutions, of which the simplest is to add @UiThreadTest. But this symbol is undefined. (Eventually Studio came up with a suggestion). Anyway he says this does not work. Tried his second solution.
+
+Looks like getStartedActivityIntent() returned null. Changed to pass first argument of new Intent(Intent.ACTION_MAIN). Test passed!!!!!!
+
+Was also able to add intent = getStartedActivityIntent() and verify that the result is not null.
+Note: have not yet verified that it is the expected intent for a BoookChooser.
+
+Next tried making two tests with more useful names (not starting with 'test') and changing to a test run for the whole class. Failed saying no tests found.
+
+Suspicion: running with built-in android Junit (v3) which only finds tests whose name starts with 'test'.
+When I click the link in the stack trace there are two options for the junit methods, first in sdk/platforms/android-19/android.jar/junit/framework and second in ...junit4.12-sources.jar/junit/framework.
+
+This fits with something I read about classPath problems.
+
+Tried setting specific test runner to AndroidJUnitRunner. Did not help.
+Tried InstrumentationTestRunner. Slightly different messages, but still says no tests found.
+Switched back to not specified. Note that module build.gradle specifies testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+Adding @RunWith(AndroidJUnit4.class) before test class causes them to be run!
+- but now getInstrumentation returns null
+
+Tried @RunWith(AndroidJUnitRunner.class); this won't build, apparently that is not a Runner.
+http://developer.android.com/tools/testing-support-library/index.html confirms need @RunWith(AndroidJUnit4.class)
+also says 
+// Injecting the Instrumentation instance is required
+        // for your test to run with AndroidJUnitRunner.
+        injectInstrumentation(InstrumentationRegistry.getInstrumentation());
+Added this to Setup; but Setup does not execute.
+Changed it so it is a public method marked @Before and does not call super.
+Closer: now gets as far as trying to start my activity.
+But something is null.
+Seems we still need to also mark this method @Override and call super.
+No, now it fails in super.setUp(): null pointer in ActivityUnitTestCase.setUp.
+
+From the above example, seems we might need to use ActivityInstrumentationTestCase2. Made this the base class.
+Now, startActivity and getStartedActivityIntent don't compile.
+Changed to use getActivity. Now it complains this can't be done on main application thread.
+Removed the code to make it run on that thread.
+
+Now, getActivity throws invalid index exception. But this failure is in my code! The view is actually trying to draw itself, and fails with no scripture available.
+
+...and after some further cleanup I got tests to pass.
+
+I wish I could state confidently how to configure the system to run unit tests.
+Such documentation is needed, because it depends on settings in Run/Edit Configurations, but changes there are not detected in version control (grrr!).
+
+When I had done all of the above, I found on switching back to unit tests (the Test Artifacts control, mid left) that running tests in org.sil.hearthis showed some failing, while running the same tests (currently all in BookButtonTest) succeeded. This was fixed by deleting a configuration for org.sil.HearThis in Android Tests, and changing the one in JUnit to be more similar to the one for BookButtonTest...specifically I had to set it to Search for Tests/In single module, and then use classpath of module/app. I no longer understand (if I ever did) why this makes a difference...probably to do with getting the wrong junit runtime. (I vaguely recall that there is a very old junit that is part of the default class path in Android Studio, but my tests need JUnit 4.)
+
+But, now the test artifact/Android instrumentation tests ones are broken, complaining that JUnit 3.8 or later is required.
+
+I think I figured at least part of it out. Using Run/Run...you can explicitly pick which configuration you want to run. Selecting one of the ones from the Android Tests group works. Problem may be that I have duplicate configurations in the Android Test group and the JUnit group and it picks the wrong one when I just ask it to test a particular thing.
+
+Using Run...I was able to run the org.sil.hearthis in app tests (currently 6 BookButtonTests) while in Unit Tests mode, then switch to Android instrumentation tests and Run/Run.../MainActivityTest and have them work. Still haven't gotten the Android Studio version of org.sil.hearthis to find any tests, but getting there.
