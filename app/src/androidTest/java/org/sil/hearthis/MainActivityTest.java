@@ -97,10 +97,13 @@ public class MainActivityTest  extends ActivityInstrumentationTestCase2<MainActi
         String infoPath = fakeFileSystem.getInfoTxtPath();
         fakeFileSystem.SimulateFile(infoPath, fakeFileSystem.getDefaultInfoTxtContent());
         fakeFileSystem.SimulateDirectory(fakeFileSystem.getProjectDirectory());
-        ServiceLocator.getServiceLocator().externalFilesDirectory = fakeFileSystem.externalFilesDirectory;
-        ServiceLocator.getServiceLocator().setFileSystem(new FileSystem(fakeFileSystem));
-        TestScriptProvider sp = new TestScriptProvider();
-        ServiceLocator.getServiceLocator().setScriptProvider(sp);
+        final ServiceLocator serviceLocator = ServiceLocator.getServiceLocator();
+        serviceLocator.externalFilesDirectory = fakeFileSystem.externalFilesDirectory;
+        serviceLocator.setFileSystem(new FileSystem(fakeFileSystem));
+        // For this test, we don't want a fake script provider, because we're testing that
+        // the 'kal/info.txt' simulated files will be found and determine the Scripture that is used.
+//        TestScriptProvider sp = new TestScriptProvider();
+//        serviceLocator.setScriptProvider(sp);
 
         // watch for the book chooser activity (or, incorrectly, a RecordActivity) to be started.
         // We'd like to watch for ANY activity to be started, but this does not seem to be possible.
@@ -114,6 +117,9 @@ public class MainActivityTest  extends ActivityInstrumentationTestCase2<MainActi
 
         assertEquals("did not automatically launch choose book activity", 1, bookChooserMonitor.getHits());
         assertEquals("unexpectedly launched record activity", 0, recordMonitor.getHits());
+
+        // We use 39 because Matthew is currently the only book that has chapters in the default test info.txt
+        assertEquals("Should find info.txt and set name of Scripture from it", "root/kal/Matthew/1/2.mp4", serviceLocator.getScriptProvider().getRecordingFilePath(39,1,2));
     }
 
 }

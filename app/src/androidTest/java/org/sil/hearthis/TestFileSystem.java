@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -114,9 +115,16 @@ public class TestFileSystem implements IFileSystem {
     @Override
     public InputStream ReadFile(String path) throws FileNotFoundException {
         String content = files.get(path);
-        // This is not supported by the minimum Android version I'm targeting,
-        // but this code only has to work for testing.
-        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        // I'd prefer to use StandardCharsets.UTF_8, but this requires API 19,
+        // and is not on the phone I'm using to test.
+
+        try {
+            return new ByteArrayInputStream(content.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            // Should never happen, just making the picky compiler happy.
+            e.printStackTrace();
+            return new ByteArrayInputStream(new byte[0]);
+        }
     }
 
     public String getFile(String path) {

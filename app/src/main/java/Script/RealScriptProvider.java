@@ -46,7 +46,7 @@ public class RealScriptProvider implements IScriptProvider {
         String getChapInfoFile() {return getChapFolder() + "/" + infoFileName;}
 
         String recordingFilePath(int blockNo) {
-            return getChapFolder() + "/" + blockNo + ".mpg4";
+            return getChapFolder() + "/" + blockNo + ".mp4";
         }
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.

@@ -3,6 +3,7 @@ package org.sil.hearthis;
 import android.app.Activity;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import Script.FileSystem;
 import Script.IFileSystem;
@@ -19,7 +20,7 @@ import Script.RealScriptProvider;
 public class ServiceLocator {
     String externalFilesDirectory;
     IScriptProvider scriptProvider;
-    FileSystem fileSystem;
+    private FileSystem fileSystem;
     static ServiceLocator theOneInstance = new ServiceLocator();
 
     // When you need the service locator call this to get it.
@@ -56,7 +57,10 @@ public class ServiceLocator {
             // Todo: scan org.sil.hearthis/files for folders containing info.txt and open first
             // Todo: remember last project
             // Todo: if no real project available use SampleScriptProvider.
-            scriptProvider = new RealScriptProvider(externalFilesDirectory + "/" + "Dhh");
+            ArrayList<String> rootDirs = getFileSystem().getDirectories(externalFilesDirectory);
+            if (rootDirs.isEmpty())
+                return null; // we can't get a script provider if we have no scripture on file.
+            scriptProvider = new RealScriptProvider(rootDirs.get(0));
         }
         return scriptProvider;
     }

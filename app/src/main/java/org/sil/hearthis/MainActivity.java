@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
         Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
 		ServiceLocator.getServiceLocator().init(this);
-		FileSystem fs = ServiceLocator.getServiceLocator().fileSystem;
+		FileSystem fs = ServiceLocator.getServiceLocator().getFileSystem();
 		String rootDir = ServiceLocator.getServiceLocator().externalFilesDirectory;
 		ArrayList<String> rootDirs = fs.getDirectories(rootDir);
 		if (rootDirs.isEmpty())
