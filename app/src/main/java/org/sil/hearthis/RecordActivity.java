@@ -269,11 +269,17 @@ public class RecordActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        if(item.getItemId() == R.id.sync){
+		final int itemId = item.getItemId();
+		if(itemId == R.id.sync){
             Intent sync = new Intent(this, SyncActivity.class);
             startActivity(sync);
             return true;
         }
+		else if (itemId == R.id.choose) {
+			Intent choose = new Intent(this, ChooseBookActivity.class);
+			startActivity(choose);
+			return true;
+		}
         return false;
     }
 }

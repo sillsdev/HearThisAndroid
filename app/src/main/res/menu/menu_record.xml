@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/sync" android:title="@string/sync_desktop"></item>
+    <item android:id="@+id/choose" android:title="@string/choose_passage"></item>
 </menu>
