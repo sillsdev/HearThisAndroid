@@ -33,7 +33,7 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class RecordActivity extends Activity {
+public class RecordActivity extends Activity implements View.OnTouchListener {
 	
 	int _activeLine;
 	ViewGroup _linesView;
@@ -95,6 +95,7 @@ public class RecordActivity extends Activity {
 			}
 
 			_linesView.addView(lineView);
+			lineView.setOnTouchListener(this);
 		}
 		
 		Button next =  (Button) findViewById(R.id.nextButton);
@@ -136,48 +137,62 @@ public class RecordActivity extends Activity {
     }
 	
 	void nextButtonClicked() {
-		if (_activeLine >= _lineCount-1) {
+		if (_activeLine >= _lineCount - 1) {
 			// Todo: move to start of next chapter or if need be book.
 			return;
 		}
+		setActiveLine(_activeLine + 1);
+	}
+	void setActiveLine(int lineNo) {
 		TextView lineView = (TextView) _linesView.getChildAt(_activeLine);
-		int topPrev = lineView.getTop();
 		lineView.setTextColor(getResources().getColor(R.color.contextTextLine));
-		_activeLine++;
-		lineView = (TextView)_linesView.getChildAt(_activeLine);
+		_activeLine = lineNo;
+		lineView = (TextView) _linesView.getChildAt(_activeLine);
 		lineView.setTextColor(getResources().getColor(R.color.activeTextLine));
-		
-		int top = lineView.getTop();
-		int bottom = lineView.getBottom();
-		int bottomNext = bottom;
-		if (_activeLine < _lineCount - 1) {
-			bottomNext = _linesView.getChildAt(_activeLine+1).getBottom();
-		}
+
 		ScrollView scrollView = (ScrollView) _linesView.getParent();
-		int scrollPos = scrollView.getScrollY();
-		int height = scrollView.getHeight();
-		
-		if (bottomNext < scrollPos + height)
-			return; // bottom of next line is already visible, nothing to do
-		
-		// Initial proposal is to scroll so the bottom of the next line is just visible
-		scrollPos = bottomNext - height - 3;
-		if (scrollPos > topPrev) {
-			// bother! Can't show all of previous and following context lines.
-			// it's more important to show the previous line.
+		int[] tops = new int[_linesView.getChildCount() + 1];
+		for (int i = 0; i < tops.length - 1; i++) {
+			tops[i] = _linesView.getChildAt(i).getTop();
+		}
+		tops[tops.length - 1] = _linesView.getChildAt(tops.length - 2).getBottom();
+		scrollView.scrollTo(0, getNewScrollPosition(scrollView.getScrollY(), scrollView.getHeight(), _activeLine, tops));
+		_recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, _activeLine);
+	}
+
+	static int getNewScrollPosition(int scrollPos, int height, int newLine, int[] tops) {
+		int newScrollPos = scrollPos;
+		int bottom = tops[newLine + 1];
+		int bottomNext = bottom; // bottom of next line (or current, if no next)
+		if (newLine < tops.length - 2) {
+			bottomNext = tops[newLine + 2];
+		}
+		if (bottomNext > scrollPos + height) {
+			// Not all of the following line is visible.
+			// Initial proposal is to scroll so the bottom of the next line is just visible
+			newScrollPos = bottomNext - height;
+		}
+		int top = tops[newLine];
+		int topPrev = top; // top of previous line (or current, if no previous line)
+		if (newLine > 0) {
+			topPrev = tops[newLine - 1];
+		}
+		if (newScrollPos > topPrev) {
+			// We do this after adjusting for following line because if we can't show both following
+			// and previous lines, it's more important to show the previous line.
 			// Next try: show previous line
-			scrollPos = topPrev;
-			if (scrollPos + height < bottom) {
+			newScrollPos = topPrev;
+			if (newScrollPos + height < bottom) {
 				// worse still! can't show all of previous and current line
-				// try showing bottom of current
-				scrollPos = bottomNext - height - 3;
-				if (scrollPos > top) {
+				// try showing bottom of current (and thus as much as possible of previous
+				newScrollPos = bottom - height;
+				if (newScrollPos > top) {
 					// Can't even see all of current line! Show the top at least.
-					scrollPos = top;
+					newScrollPos = top;
 				}
 			}
 		}
-		scrollView.scrollTo(0, scrollPos);
+		return newScrollPos;
 	}
 	
 	void recordButtonTouch(MotionEvent e) {
@@ -214,7 +229,6 @@ public class RecordActivity extends Activity {
 		// This combination produces a file that WMP can play.
 		recorder.setOutputFormat(OutputFormat.MPEG_4);
 		recorder.setAudioEncoder(AudioEncoder.AAC);
-		_recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, _activeLine);
 		File file = new File(_recordingFilePath);
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
@@ -282,4 +296,11 @@ public class RecordActivity extends Activity {
 		}
         return false;
     }
+
+	@Override
+	public boolean onTouch(View view, MotionEvent motionEvent) {
+		int newLine = _linesView.indexOfChild(view);
+		setActiveLine(newLine);
+		return false;
+	}
 }
