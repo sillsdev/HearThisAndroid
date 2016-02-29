@@ -46,7 +46,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
     static final String CHAP_NUM = "chapterNumber";
     static final String ACTIVE_LINE = "activeLine";
 
-	Typeface mtfl;
+	//Typeface mtfl;
 	
 	MediaRecorder recorder = null;
 	
@@ -55,7 +55,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
 		
-		mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
+		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
 		
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
@@ -89,6 +89,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 //				lineView.setText("Grandroid says 'Hello!'");
 //			else
 			lineView.setText(line.Text);
+			//lineView.setTypeface(mtfl, 0);
 
 			_linesView.addView(lineView);
 			lineView.setOnTouchListener(this);
