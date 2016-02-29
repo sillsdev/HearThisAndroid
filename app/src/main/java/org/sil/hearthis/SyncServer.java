@@ -55,9 +55,12 @@ public class SyncServer extends Thread {
         registry.register("/getfile*", new RequestFileHandler(_parent));
         registry.register("/putfile*", new AcceptFileHandler(_parent));
         registry.register("/list*", new ListDirectoryHandler(_parent));
+        registry.register("/notify*", new AcceptNotificationHandler());
         httpService.setHandlerResolver(registry);
     }
     public synchronized void startThread() {
+        if (_running)
+            return; // already started, must not do twice.
         _running = true;
 
         super.start();

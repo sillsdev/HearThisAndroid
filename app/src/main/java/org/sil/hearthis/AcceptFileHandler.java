@@ -43,7 +43,7 @@ public class AcceptFileHandler implements HttpRequestHandler {
                 File file = new File(path);
                 File dir = file.getParentFile();
                 if (!dir.exists())
-                    dir.mkdir();
+                    dir.mkdirs();
                 FileOutputStream fs = new FileOutputStream(file);
                 fs.write(data);
                 fs.close();

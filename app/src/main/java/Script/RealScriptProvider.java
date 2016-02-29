@@ -46,7 +46,10 @@ public class RealScriptProvider implements IScriptProvider {
         String getChapInfoFile() {return getChapFolder() + "/" + infoFileName;}
 
         String recordingFilePath(int blockNo) {
-            return getChapFolder() + "/" + blockNo + ".mp4";
+            // Enhance: instead of assuming line number of nth block is blockNo + 1,
+            // Extract the <ScriptLine> from the chapter info file as in noteLineRecorded,
+            // and use its LineNumber element.
+            return getChapFolder() + "/" + (blockNo + 1) + ".mp4";
         }
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.

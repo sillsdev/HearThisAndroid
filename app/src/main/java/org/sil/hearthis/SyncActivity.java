@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 
-public class SyncActivity extends ActionBarActivity {
+public class SyncActivity extends ActionBarActivity implements AcceptNotificationHandler.NotificationListener {
 
     Button scanBtn;
     TextView ipView;
@@ -74,6 +74,7 @@ public class SyncActivity extends ActionBarActivity {
                 ipView.setText(contents);
                 SendMessage sendMessageTask = new SendMessage();
                 sendMessageTask.execute();
+                AcceptNotificationHandler.addNotificationListener(this);
             }
         }
     }
@@ -91,6 +92,12 @@ public class SyncActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onNotification(String message) {
+        AcceptNotificationHandler.removeNotificationListener(this);
+        this.finish();
     }
 
     // This class is responsible to send one message packet to the IP address we

@@ -89,10 +89,6 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 //				lineView.setText("Grandroid says 'Hello!'");
 //			else
 			lineView.setText(line.Text);
-			lineView.setTypeface(mtfl, 0);
-			if (i == 0) {
-				lineView.setTextColor(getResources().getColor(R.color.activeTextLine));
-			}
 
 			_linesView.addView(lineView);
 			lineView.setOnTouchListener(this);
@@ -126,6 +122,8 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 				playButtonClicked();
 			}
 		});
+		if (_lineCount > 0)
+			setActiveLine(0);
 	}
 
     @Override
@@ -230,6 +228,9 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 		recorder.setOutputFormat(OutputFormat.MPEG_4);
 		recorder.setAudioEncoder(AudioEncoder.AAC);
 		File file = new File(_recordingFilePath);
+		File dir = file.getParentFile();
+		if (!dir.exists())
+			dir.mkdirs();
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
 			recorder.prepare();
