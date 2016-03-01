@@ -4,9 +4,10 @@
     android:versionCode="2"
     android:versionName="0.5" >
 
-    <uses-sdk
+    <!--uses-sdk
+    Don't specify these here because they are overridden by the versions in the module: app gradle script
         android:minSdkVersion="18"
-        android:targetSdkVersion="21" />
+        android:targetSdkVersion="21" /-->
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

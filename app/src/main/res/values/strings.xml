@@ -2,7 +2,8 @@
 <resources>
 
     <string name="app_name">HearThis</string>
-    <string name="sync_message">Ready to sync with the desktop application. Click the Android button in HearThis on your main computer. Then click the scan button and scan the bar code on the desktop.</string>
+    <string name="sync_message">Ready to sync with the desktop application. Click the Android button in HearThis on your main computer. Then click the scan button and scan the QR code on the screen.</string>
+    <string name="alt_sync_message">Or you can enter this code into the dialog on the desktop:</string>
     <string name="sync_desktop">Sync with desktop app</string>
     <string name="choose_passage">Choose passage</string>
     <string name="Open">Open</string>

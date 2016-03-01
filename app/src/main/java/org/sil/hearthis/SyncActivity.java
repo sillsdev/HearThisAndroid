@@ -59,7 +59,39 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
                 integrator.initiateScan();
             }
         });
+        String ourIpAddress = getOurIpAddress();
+        TextView ourIpView = (TextView)findViewById(R.id.our_ip_address);
+        ourIpView.setText(ourIpAddress);
+        AcceptNotificationHandler.addNotificationListener(this);
         return true;
+    }
+
+    // Get the IP address of this device (on the WiFi network) to transmit to the desktop.
+    private String getOurIpAddress() {
+        String ip = "";
+        try {
+            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (enumNetworkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = enumNetworkInterfaces.nextElement();
+                Enumeration<InetAddress> enumInetAddress = networkInterface.getInetAddresses();
+                while (enumInetAddress.hasMoreElements()) {
+                    InetAddress inetAddress = enumInetAddress.nextElement();
+
+                    if (inetAddress.isSiteLocalAddress()) {
+                        return inetAddress.getHostAddress();
+                    }
+
+                }
+
+            }
+
+        } catch (SocketException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            ip += "Something Wrong! " + e.toString() + "\n";
+        }
+
+        return ip;
     }
 
     // Receiver the result of a successful QR scan, assumed to be the one from the desktop.
@@ -73,8 +105,8 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
             if (contents != null) {
                 ipView.setText(contents);
                 SendMessage sendMessageTask = new SendMessage();
+                sendMessageTask.ourIpAddress = getOurIpAddress();
                 sendMessageTask.execute();
-                AcceptNotificationHandler.addNotificationListener(this);
             }
         }
     }
@@ -104,13 +136,14 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     // obtained from the desktop, containing the Android's own IP address.
     private class SendMessage extends AsyncTask<Void, Void, Void> {
 
+        public String ourIpAddress;
         @Override
         protected Void doInBackground(Void... params) {
             try {
                 String ipAddress = ipView.getText().toString();
                 InetAddress receiverAddress = InetAddress.getByName(ipAddress);
                 DatagramSocket socket = new DatagramSocket();
-                byte[] buffer = getOurIpAddress().getBytes("UTF-8");
+                byte[] buffer = ourIpAddress.getBytes("UTF-8");
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length, receiverAddress, desktopPort);
                 socket.send(packet);
             } catch (UnknownHostException e) {
@@ -119,34 +152,6 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
                 e.printStackTrace();
             }
             return null;
-        }
-
-        // Get the IP address of this device (on the WiFi network) to transmit to the desktop.
-        private String getOurIpAddress() {
-            String ip = "";
-            try {
-                Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
-                while (enumNetworkInterfaces.hasMoreElements()) {
-                    NetworkInterface networkInterface = enumNetworkInterfaces.nextElement();
-                    Enumeration<InetAddress> enumInetAddress = networkInterface.getInetAddresses();
-                    while (enumInetAddress.hasMoreElements()) {
-                        InetAddress inetAddress = enumInetAddress.nextElement();
-
-                        if (inetAddress.isSiteLocalAddress()) {
-                            return inetAddress.getHostAddress();
-                        }
-
-                    }
-
-                }
-
-            } catch (SocketException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                ip += "Something Wrong! " + e.toString() + "\n";
-            }
-
-            return ip;
         }
     }
 }
