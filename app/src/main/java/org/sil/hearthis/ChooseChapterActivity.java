@@ -18,6 +18,7 @@ public class ChooseChapterActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chapters);
+		ServiceLocator.getServiceLocator().init(this);
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
 		final BookInfo book = (BookInfo)extras.get("bookInfo");
