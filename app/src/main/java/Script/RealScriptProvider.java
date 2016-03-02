@@ -1,5 +1,6 @@
 package Script;
 
+import org.sil.hearthis.RecordActivity;
 import org.sil.hearthis.ServiceLocator;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -49,7 +50,7 @@ public class RealScriptProvider implements IScriptProvider {
             // Enhance: instead of assuming line number of nth block is blockNo + 1,
             // Extract the <ScriptLine> from the chapter info file as in noteLineRecorded,
             // and use its LineNumber element.
-            return getChapFolder() + "/" + (blockNo + 1) + ".mp4";
+            return getChapFolder() + "/" + (blockNo + 1) + (RecordActivity.useWaveRecorder ? ".wav" : ".mp4");
         }
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.

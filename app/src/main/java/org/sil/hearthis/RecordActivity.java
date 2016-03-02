@@ -3,15 +3,13 @@ package org.sil.hearthis;
 import java.io.File;
 import java.io.IOException;
 
-import org.sil.palaso.Graphite;
-
 import Script.BookInfo;
 import Script.IScriptProvider;
 import Script.ScriptLine;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Typeface;
+import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -49,6 +47,8 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 	//Typeface mtfl;
 	
 	MediaRecorder recorder = null;
+	WavAudioRecorder waveRecorder = null;
+	public static boolean useWaveRecorder = true;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -212,7 +212,23 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 
 	String _recordingFilePath = "";
 
+	void startWaveRecorder() {
+		if (waveRecorder != null)
+			waveRecorder.release();
+		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		File oldRecording = new File(_recordingFilePath);
+		if (oldRecording.exists())
+			oldRecording.delete();
+		waveRecorder.setOutputFile(_recordingFilePath);
+		waveRecorder.prepare();
+		waveRecorder.start();
+	}
+
 	void startRecording() {
+		if (useWaveRecorder) {
+			startWaveRecorder();
+			return;
+		}
 		if (recorder != null) {
 	      recorder.release();
 		}
@@ -228,6 +244,8 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 		// This combination produces a file that WMP can play.
 		recorder.setOutputFormat(OutputFormat.MPEG_4);
 		recorder.setAudioEncoder(AudioEncoder.AAC);
+		recorder.setAudioSamplingRate(44100);
+		recorder.setAudioEncodingBitRate(44100);
 		File file = new File(_recordingFilePath);
 		File dir = file.getParentFile();
 		if (!dir.exists())
@@ -242,6 +260,10 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 	}
 	
 	void stopRecording() {
+		if (useWaveRecorder && waveRecorder != null)  {
+			waveRecorder.stop();
+			return;
+		}
 	   if (recorder != null) {
 		   recorder.stop();
 		   recorder.reset();
