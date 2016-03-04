@@ -58,4 +58,17 @@
 
     </TableRow>
 
+    <TableRow
+        android:id="@+id/levelRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <!-- the weird combination of width 0 and weight 1 makes it take up the whole width,
+        while width match_parent doesn't work in table row-->
+        <org.sil.hearthis.LevelMeterView
+            android:id="@+id/levelMeter"
+            android:layout_height="20dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"/>
+    </TableRow>
+
 </TableLayout>

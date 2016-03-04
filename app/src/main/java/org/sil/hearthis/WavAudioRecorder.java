@@ -27,6 +27,16 @@ public class WavAudioRecorder {
 		} while((++i<sampleRates.length) & !(result.getState() == WavAudioRecorder.State.INITIALIZING));
 		return result;
 	}
+
+	public interface IMonitorListener {
+		void maxLevel(int level);
+	}
+	IMonitorListener monitorListener;
+
+	// Currently only one listener is supported
+	public void setMonitorListener (IMonitorListener listener) {
+		monitorListener = listener;
+	}
 	
 	/**
 	* INITIALIZING : recorder is initializing;
@@ -35,7 +45,7 @@ public class WavAudioRecorder {
 	* ERROR : reconstruction needed
 	* STOPPED: reset needed
 	*/
-	public enum State {INITIALIZING, READY, RECORDING, ERROR, STOPPED};
+	public enum State {INITIALIZING, READY, MONITORING, RECORDING, ERROR, STOPPED};
 	
 	public static final boolean RECORDING_UNCOMPRESSED = true;
 	public static final boolean RECORDING_COMPRESSED = false;
@@ -52,6 +62,8 @@ public class WavAudioRecorder {
 	
 	// Recorder state; see State
 	private State          	state;
+
+	private boolean WasMonitoring; // True while recording if we were previously monitoring.
 	
 	// File writer (only in uncompressed mode)
 	private RandomAccessFile randomAccessWriter;
@@ -95,6 +107,20 @@ public class WavAudioRecorder {
 			}
 			int numOfBytes = audioRecorder.read(buffer, 0, buffer.length); // read audio data to buffer
 //			Log.d(WavAudioRecorder.this.getClass().getName(), state + ":" + numOfBytes);
+			if (monitorListener != null) {
+				// I'm using 16-bit mono, so buffer contains 2-byte little-endian samples.  (Enhance: eventually consider handling other modes).
+				// Find largest amplitude.
+				//  Report it to the app.
+				short maxAmp = 0;
+				for (int i = 0; i < numOfBytes / 2; i++) {
+					short current = (short) Math.abs((short) (buffer[i * 2 + 1] << 8 | buffer[i * 2]));
+					if (current > maxAmp) maxAmp = current;
+				}
+				monitorListener.maxLevel(maxAmp);
+			}
+			if (state.MONITORING == state) {
+				return;
+			}
 			try { 
 				randomAccessWriter.write(buffer); 		  // write audio data to file
 				payloadSize += buffer.length;
@@ -294,6 +320,12 @@ public class WavAudioRecorder {
 	 * 
 	 */
 	public void start() {
+		WasMonitoring = false;
+		if (state == State.MONITORING) {
+			audioRecorder.stop();
+			state = State.READY;
+			WasMonitoring = true;
+		}
 		if (state == State.READY) {
 			payloadSize = 0;
 			audioRecorder.startRecording();
@@ -301,6 +333,25 @@ public class WavAudioRecorder {
 			state = State.RECORDING;
 		} else {
 			Log.e(WavAudioRecorder.class.getName(), "start() called on illegal state");
+			state = State.ERROR;
+		}
+	}
+
+	/**
+	 *
+	 *
+	 * Starts the recording, and sets the state to RECORDING.
+	 * Call after prepare().
+	 *
+	 */
+	public void startMonitoring() {
+		if (state == State.INITIALIZING) {
+			buffer = new byte[mPeriodInFrames*mBitsPersample/8*nChannels];
+			audioRecorder.startRecording();
+			audioRecorder.read(buffer, 0, buffer.length);	//[TODO: is this necessary]read the existing data in audio hardware, but don't do anything
+			state = State.MONITORING;
+		} else {
+			Log.e(WavAudioRecorder.class.getName(), "startMonitoring() called on illegal state");
 			state = State.ERROR;
 		}
 	}

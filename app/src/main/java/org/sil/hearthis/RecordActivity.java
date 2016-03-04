@@ -31,7 +31,7 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class RecordActivity extends Activity implements View.OnTouchListener {
+public class RecordActivity extends Activity implements View.OnTouchListener, WavAudioRecorder.IMonitorListener {
 	
 	int _activeLine;
 	ViewGroup _linesView;
@@ -49,6 +49,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 	MediaRecorder recorder = null;
 	WavAudioRecorder waveRecorder = null;
 	public static boolean useWaveRecorder = true;
+	LevelMeterView levelMeter;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -125,11 +126,26 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 		});
 		if (_lineCount > 0)
 			setActiveLine(0);
+		levelMeter = (LevelMeterView) findViewById(R.id.levelMeter);
 	}
 
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// The activity has become visible (it is now "resumed").
+		startMonitoring();
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		// Another activity is taking focus (this activity is about to be "paused").
+		if (waveRecorder != null) {
+			waveRecorder.stop();
+		}
+	}
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putInt(CHAP_NUM,_chapNum);
+        savedInstanceState.putInt(CHAP_NUM, _chapNum);
         savedInstanceState.putInt(BOOK_NUM,_bookNum);
         savedInstanceState.putInt(ACTIVE_LINE,_activeLine);
         super.onSaveInstanceState(savedInstanceState);
@@ -212,6 +228,15 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 
 	String _recordingFilePath = "";
 
+	void startMonitoring() {
+		if (waveRecorder != null)
+			waveRecorder.release();
+		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		//waveRecorder.prepare(); no; this initializes (and so requires) output file.
+		waveRecorder.setMonitorListener(this);
+		waveRecorder.startMonitoring();
+	}
+
 	void startWaveRecorder() {
 		if (waveRecorder != null)
 			waveRecorder.release();
@@ -221,6 +246,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 			oldRecording.delete();
 		waveRecorder.setOutputFile(_recordingFilePath);
 		waveRecorder.prepare();
+		waveRecorder.setMonitorListener(this);
 		waveRecorder.start();
 	}
 
@@ -262,6 +288,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 	void stopRecording() {
 		if (useWaveRecorder && waveRecorder != null)  {
 			waveRecorder.stop();
+			startMonitoring();
 			return;
 		}
 	   if (recorder != null) {
@@ -326,5 +353,10 @@ public class RecordActivity extends Activity implements View.OnTouchListener {
 		int newLine = _linesView.indexOfChild(view);
 		setActiveLine(newLine);
 		return false;
+	}
+
+	@Override
+	public void maxLevel(int level) {
+		levelMeter.setLevel(level *100 / Short.MAX_VALUE);
 	}
 }
