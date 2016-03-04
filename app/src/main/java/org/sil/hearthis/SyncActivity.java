@@ -20,25 +20,37 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.Enumeration;
 
 
-public class SyncActivity extends ActionBarActivity implements AcceptNotificationHandler.NotificationListener {
+public class SyncActivity extends ActionBarActivity implements AcceptNotificationHandler.NotificationListener,
+        AcceptFileHandler.IFileReceivedNotification,
+    RequestFileHandler.IFileSentNotification {
 
     Button scanBtn;
     TextView ipView;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
+    TextView progressView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
         startSyncServer();
+        progressView = (TextView)findViewById(R.id.progress);
     }
 
     private void startSyncServer() {
         Intent serviceIntent = new Intent(this, SyncService.class);
         startService(serviceIntent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AcceptFileHandler.requestFileReceivedNotification(this);
+        RequestFileHandler.requestFileSentNotification((this));
     }
 
 
@@ -130,6 +142,34 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     public void onNotification(String message) {
         AcceptNotificationHandler.removeNotificationListener(this);
         this.finish();
+    }
+
+    Date lastProgress = new Date();
+
+    @Override
+    public void receivingFile(final String name) {
+        // To prevent excess flicker and wasting compute time on progress reports,
+        // only change once per second.
+        if (new Date().getTime() - lastProgress.getTime() < 1000)
+            return;
+        lastProgress = new Date();
+        progressView.post(new Runnable() {
+            public void run() {
+                progressView.setText("receiving " + name);
+            }
+        });
+    }
+
+    @Override
+    public void sendingFile(final String name) {
+        if (new Date().getTime() - lastProgress.getTime() < 1000)
+            return;
+        lastProgress = new Date();
+        progressView.post(new Runnable() {
+            public void run() {
+                progressView.setText("sending " + name);
+            }
+        });
     }
 
     // This class is responsible to send one message packet to the IP address we

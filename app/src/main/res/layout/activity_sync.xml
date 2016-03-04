@@ -38,5 +38,9 @@
         style="@android:style/TextAppearance.Large"
         android:layout_below = "@+id/alternativeSync"
         />
+    <TextView android:id="@+id/progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below = "@+id/our_ip_address" />
 
 </RelativeLayout>

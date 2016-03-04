@@ -32,6 +32,8 @@ public class AcceptFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
+        if (listener != null)
+            listener.receivingFile(filePath);
         String path = baseDir  + "/" + filePath;
         HttpEntity entity = null;
         String result = "failure";
@@ -53,4 +55,14 @@ public class AcceptFileHandler implements HttpRequestHandler {
             }
         }
         response.setEntity(new StringEntity(result));
-    }}
+    }
+
+    public interface IFileReceivedNotification {
+        void receivingFile(String name);
+    }
+
+    static IFileReceivedNotification listener;
+    public static void requestFileReceivedNotification(IFileReceivedNotification newListener) {
+        listener = newListener; // We only support notifying the most recent for now.
+    }
+}

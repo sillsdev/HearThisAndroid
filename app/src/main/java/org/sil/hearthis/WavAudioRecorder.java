@@ -101,6 +101,8 @@ public class WavAudioRecorder {
 	private AudioRecord.OnRecordPositionUpdateListener updateListener = new AudioRecord.OnRecordPositionUpdateListener() {
 		//	periodic updates on the progress of the record head
 		public void onPeriodicNotification(AudioRecord recorder) {
+			if (State.ERROR == state)
+				return;
 			if (State.STOPPED == state) {
 				Log.d(WavAudioRecorder.this.getClass().getName(), "recorder stopped");
 				return;
@@ -118,7 +120,7 @@ public class WavAudioRecorder {
 				}
 				monitorListener.maxLevel(maxAmp);
 			}
-			if (state.MONITORING == state) {
+			if (state.RECORDING != state) {
 				return;
 			}
 			try { 

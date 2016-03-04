@@ -29,6 +29,8 @@ public class RequestFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
+        if (listener!= null)
+            listener.sendingFile(filePath);
         String path = baseDir  + "/" + filePath;
         File file = new File(path);
         if (!file.exists()) {
@@ -40,5 +42,14 @@ public class RequestFileHandler implements HttpRequestHandler {
         response.setHeader("Content-Type", "application/force-download");
         //response.setHeader("Content-Disposition","attachment; filename=" + );
         response.setEntity(body);
+    }
+
+    public interface IFileSentNotification {
+        void sendingFile(String name);
+    }
+
+    static IFileSentNotification listener;
+    public static void requestFileSentNotification(IFileSentNotification newListener) {
+        listener = newListener; // We only support notifying the most recent for now.
     }
 }
