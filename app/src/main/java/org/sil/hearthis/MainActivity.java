@@ -13,7 +13,7 @@ import android.widget.Button;
 
 import java.util.ArrayList;
 
-public class MainActivity extends Activity implements AcceptNotificationHandler.NotificationListener{
+public class MainActivity extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -23,17 +23,22 @@ public class MainActivity extends Activity implements AcceptNotificationHandler.
 		ServiceLocator.getServiceLocator().init(this);
 		Button sync = (Button) findViewById(R.id.mainSyncButton);
 		final MainActivity thisActivity = this; // required to use it in touch handler
-		sync.setOnTouchListener(new View.OnTouchListener() {
-
+		sync.setOnClickListener(new View.OnClickListener() {
 			@Override
-			public boolean onTouch(View v, MotionEvent e) {
+			public void onClick(View view) {
 				// When a sync completes we want to evaluate the results and launch the book chooser if appropriate
-				AcceptNotificationHandler.addNotificationListener(thisActivity);
 				LaunchSyncActivity();
-				return true; // we handle all touch events on this button.
 			}
-
 		});
+
+		launchChooseBookIfProject();
+	}
+
+	// Among other cases, we get resumed when the sync activity closes; typically we now have
+	// a project and can carry on opening it.
+	@Override
+	protected void onResume() {
+		super.onResume();
 		launchChooseBookIfProject();
 	}
 
@@ -56,13 +61,5 @@ public class MainActivity extends Activity implements AcceptNotificationHandler.
 	void LaunchSyncActivity() {
 		Intent sync = new Intent(this, SyncActivity.class);
 		startActivity(sync);
-	}
-
-	// Called when desktop sync completes (if no project initially)
-	@Override
-	public void onNotification(String message) {
-		if (!launchChooseBookIfProject())
-			return;
-		AcceptNotificationHandler.removeNotificationListener(this);
 	}
 }

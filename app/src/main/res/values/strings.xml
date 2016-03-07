@@ -14,7 +14,9 @@
     <string name="title_activity_sync">SyncActivity</string>
     <string name="action_settings">Settings</string>
     <string name="scan">Scan</string>
+    <string name="continue_button_caption">Continue</string>
     <string name="title_activity_choose_book">ChooseBookActivity</string>
+    <string name="sync_success">Sync completed successfully!</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="noProject">No projects found. Please choose a project in HearThis Desktop and synchronize it using the Sync button.</string>

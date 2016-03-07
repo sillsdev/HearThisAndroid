@@ -29,6 +29,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     RequestFileHandler.IFileSentNotification {
 
     Button scanBtn;
+    Button continueButton;
     TextView ipView;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
     TextView progressView;
@@ -39,6 +40,15 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
         setContentView(R.layout.activity_sync);
         startSyncServer();
         progressView = (TextView)findViewById(R.id.progress);
+        continueButton = (Button)findViewById(R.id.continue_button);
+        continueButton.setEnabled(false);
+        final SyncActivity thisActivity = this;
+        continueButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                thisActivity.finish();
+            }
+        });
     }
 
     private void startSyncServer() {
@@ -141,10 +151,25 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     @Override
     public void onNotification(String message) {
         AcceptNotificationHandler.removeNotificationListener(this);
-        this.finish();
+        setProgress(getString(R.string.sync_success));
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                continueButton.setEnabled(true);
+            }
+        });
+    }
+
+    void setProgress(final String text) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                progressView.setText(text);
+            }
+        });
     }
 
     Date lastProgress = new Date();
+    boolean stopUpdatingProgress = false;
 
     @Override
     public void receivingFile(final String name) {
@@ -153,11 +178,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
-        progressView.post(new Runnable() {
-            public void run() {
-                progressView.setText("receiving " + name);
-            }
-        });
+        setProgress("receiving " + name);
     }
 
     @Override
@@ -165,11 +186,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
-        progressView.post(new Runnable() {
-            public void run() {
-                progressView.setText("sending " + name);
-            }
-        });
+        setProgress("sending " + name);
     }
 
     // This class is responsible to send one message packet to the IP address we
