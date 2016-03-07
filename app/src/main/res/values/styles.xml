@@ -38,4 +38,9 @@
     <color name="defaultTextColor">#FFF</color> <!-- Not sure this is what I wanted...accidental undo lost original-->
     <color name="goodLevelColor">#0F0</color>
     <color name="badLevelColor">#F00</color>
+    <color name="audioButtonBlueColor">#232653</color>
+    <color name="buttonWaitingColor">#D70200</color>
+    <color name="buttonSuggestedBorderColor">#FCCA01</color>
+    <color name="recordingColor">#39A500</color>
+    <color name="audioButtonDisabledColor">#5F5F5F</color>
 </resources>

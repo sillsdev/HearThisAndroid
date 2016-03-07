@@ -2,12 +2,15 @@ package org.sil.hearthis;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 
 import Script.BookInfo;
 import Script.IScriptProvider;
 import Script.ScriptLine;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -31,7 +34,7 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class RecordActivity extends Activity implements View.OnTouchListener, WavAudioRecorder.IMonitorListener {
+public class RecordActivity extends Activity implements View.OnTouchListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
 	
 	int _activeLine;
 	ViewGroup _linesView;
@@ -45,12 +48,20 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
     static final String ACTIVE_LINE = "activeLine";
 
 	//Typeface mtfl;
-	
-	MediaRecorder recorder = null;
-	WavAudioRecorder waveRecorder = null;
+
+	// We can't use two recorders at once, so may as well be static.
+	static MediaRecorder recorder = null;
+	static WavAudioRecorder waveRecorder = null;
 	public static boolean useWaveRecorder = true;
 	LevelMeterView levelMeter;
-	
+
+	// Enhance: move to AudioButtonsFragment
+	NextButton nextButton;
+	RecordButton recordButton;
+	PlayButton playButton;
+	Date startRecordingTime;
+	boolean starting = false;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -96,18 +107,18 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 			lineView.setOnTouchListener(this);
 		}
 		
-		Button next =  (Button) findViewById(R.id.nextButton);
-		next.setOnClickListener(new OnClickListener() {
-			
+		nextButton =  (NextButton) findViewById(R.id.nextButton);
+		nextButton.setOnClickListener(new OnClickListener() {
+
 			@Override
 			public void onClick(View v) {
 				nextButtonClicked();
 			}
 		});
 		
-		Button record =  (Button) findViewById(R.id.recordButton);
-		record.setOnTouchListener(new OnTouchListener() {
-			
+		recordButton =  (RecordButton) findViewById(R.id.recordButton);
+		recordButton.setOnTouchListener(new OnTouchListener() {
+
 			@Override
 			public boolean onTouch(View v, MotionEvent e) {
 				recordButtonTouch(e);
@@ -116,9 +127,9 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 
 		});
 		
-		Button play =  (Button) findViewById(R.id.playButton);
-		play.setOnClickListener(new OnClickListener() {
-			
+		playButton =  (PlayButton) findViewById(R.id.playButton);
+		playButton.setOnClickListener(new OnClickListener() {
+
 			@Override
 			public void onClick(View v) {
 				playButtonClicked();
@@ -138,12 +149,10 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 	@Override
 	protected void onPause() {
 		super.onPause();
-		// Another activity is taking focus (this activity is about to be "paused").
-		if (waveRecorder != null) {
-			waveRecorder.stop();
-		}
+		stopMonitoring(); //  don't want to waste cycles monitoring while paused.
 	}
-    @Override
+
+	@Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putInt(CHAP_NUM, _chapNum);
         savedInstanceState.putInt(BOOK_NUM,_bookNum);
@@ -173,6 +182,14 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		tops[tops.length - 1] = _linesView.getChildAt(tops.length - 2).getBottom();
 		scrollView.scrollTo(0, getNewScrollPosition(scrollView.getScrollY(), scrollView.getHeight(), _activeLine, tops));
 		_recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, _activeLine);
+		recordButton.setIsDefault(true);
+		nextButton.setIsDefault(false);
+		playButton.setIsDefault(false);
+		updateDisplayState();
+	}
+
+	private void updateDisplayState() {
+		playButton.setButtonState(new File(_recordingFilePath).exists() ? BtnState.Normal : BtnState.Inactive);
 	}
 
 	static int getNewScrollPosition(int scrollPos, int height, int newLine, int[] tops) {
@@ -237,6 +254,14 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		waveRecorder.startMonitoring();
 	}
 
+	private void stopMonitoring() {
+		if (waveRecorder != null) {
+			waveRecorder.stop();
+			waveRecorder.release();
+			waveRecorder  = null;
+		}
+	}
+
 	void startWaveRecorder() {
 		if (waveRecorder != null)
 			waveRecorder.release();
@@ -248,11 +273,24 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		waveRecorder.prepare();
 		waveRecorder.setMonitorListener(this);
 		waveRecorder.start();
+		recordButton.setWaiting(false);
+		startRecordingTime = new Date();
+		starting = false;
 	}
 
 	void startRecording() {
+		recordButton.setButtonState(BtnState.Pushed);
+		recordButton.setWaiting(true);
 		if (useWaveRecorder) {
-			startWaveRecorder();
+			starting = true; // protects against trying to stop the recording before we finish starting it.
+			// Do the initialization of the recorder in another thread so the main one
+			//  can color the button red until we really start recording.
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					startWaveRecorder();
+				}
+			}).start();
 			return;
 		}
 		if (recorder != null) {
@@ -280,30 +318,71 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		try {
 			recorder.prepare();
 			recorder.start();
+			recordButton.setWaiting(false);
+			startRecordingTime = new Date();
 		} catch (IOException e) {
             e.printStackTrace();
         }
 	}
 	
 	void stopRecording() {
+		Date beginStop = new Date();
+		while (starting) {
+			// ouch! this will probably be a short-recording problem! The thread that is
+			// trying to start the recording hasn't finished! Wait until it does.
+			try {
+				Thread.sleep(100);
+			} catch(InterruptedException e) {
+				// shouldn't happen, but Java insists.
+			}
+		}
+		recordButton.setButtonState(BtnState.Normal);
+		recordButton.setWaiting(false);
 		if (useWaveRecorder && waveRecorder != null)  {
 			waveRecorder.stop();
 			startMonitoring();
-			return;
 		}
-	   if (recorder != null) {
-		   recorder.stop();
-		   recorder.reset();
-		   recorder.release();
-		   File file = new File(_recordingFilePath);
-		   Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
-		   recorder = null;
-           _provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
-	   }
+	   else if (recorder != null) {
+			recorder.stop();
+			recorder.reset();
+			recorder.release();
+			File file = new File(_recordingFilePath);
+			Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
+			recorder = null;
+		}
+		// Don't just use new Date() here. It can take ~half a second to get things stopped.
+		if (beginStop.getTime() - startRecordingTime.getTime() < 500) {
+			// Press not long enough; treat as failure.
+			new AlertDialog.Builder(this)
+					//.setTitle("Too short!")
+					.setMessage("Hold down the record button while talking, and only let it go when you're done.")
+					.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							// nothing to do
+						}
+					})
+					.setIcon(android.R.drawable.ic_dialog_alert)
+					.show();
+			File badFile = new File(_recordingFilePath);
+			if (badFile.exists()) {
+				badFile.delete();
+				// for now just ignore if we can't delete. (Does not throw.)
+			}
+			return; // skip state changes for successful recording
+		}
+		recordButton.setIsDefault(false);
+		playButton.setIsDefault(true);
+		nextButton.setIsDefault(false);
+		updateDisplayState();
+		_provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
 	}
-	
+
+	// Todo: disable when no recording exists.
 	void playButtonClicked() {
+		playButton.setPlaying(true);
 		MediaPlayer mp = new MediaPlayer();
+		mp.setOnCompletionListener(this);
+		stopMonitoring();
 		try {
 			// Todo:  file name and location based on book, chapter, segment
 
@@ -358,5 +437,15 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 	@Override
 	public void maxLevel(int level) {
 		levelMeter.setLevel(level *100 / Short.MAX_VALUE);
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mediaPlayer) {
+		playButton.setPlaying(false);
+		playButton.setButtonState(BtnState.Normal);
+		playButton.setIsDefault(false);
+		recordButton.setIsDefault(false);
+		nextButton.setIsDefault(true);
+		startMonitoring();
 	}
 }
