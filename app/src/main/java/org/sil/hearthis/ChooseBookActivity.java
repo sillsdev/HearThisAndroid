@@ -23,6 +23,7 @@ public class ChooseBookActivity extends Activity {
         setContentView(R.layout.activity_choose_book);
         IScriptProvider scripture = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
         Project project = new Project("Sample", scripture);
+        getActionBar().setTitle(R.string.choose_book);
         setProject(project);
     }
 

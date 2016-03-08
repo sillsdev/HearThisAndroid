@@ -17,7 +17,10 @@
     <string name="continue_button_caption">Continue</string>
     <string name="title_activity_choose_book">ChooseBookActivity</string>
     <string name="sync_success">Sync completed successfully!</string>
-
+    <string name="choose_book">Choose a book</string>
+    <string name="choose_chapter">Choose a chapter</string>
+    <string name="sync_title">Synchronize</string>
+    <string name="record_title">HearThis Recording</string>
     <string name="hello_world">Hello world!</string>
     <string name="noProject">No projects found. Please choose a project in HearThis Desktop and synchronize it using the Sync button.</string>
 

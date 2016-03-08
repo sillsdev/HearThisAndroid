@@ -67,6 +67,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
+		getActionBar().setTitle(R.string.record_title);
 		
 		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
 		

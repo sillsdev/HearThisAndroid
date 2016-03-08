@@ -38,6 +38,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
+        getActionBar().setTitle(R.string.sync_title);
         startSyncServer();
         progressView = (TextView)findViewById(R.id.progress);
         continueButton = (Button)findViewById(R.id.continue_button);

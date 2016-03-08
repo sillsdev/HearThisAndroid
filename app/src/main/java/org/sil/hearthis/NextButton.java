@@ -50,14 +50,14 @@ public class NextButton extends CustomButton {
         float stem = size * 12/33 + delta;
 
         Path arrow = new Path();
-        arrow.moveTo(delta, mid - thick / 2); // upper left corner of stem
-        arrow.lineTo(delta, mid + thick / 2); // lower left corner of stem
-        arrow.lineTo(stem, mid + thick/2); // lower junction of stem and arrow
-        arrow.lineTo(stem, size + delta); // lower point of arrow
-        arrow.lineTo(size + delta, size/2 + delta); // tip of arrow
-        arrow.lineTo(stem, delta); // upper point of arrow
-        arrow.lineTo(stem, mid - thick/2); // upper junction of stem and arrow
-        arrow.lineTo(delta, mid - thick / 2); // back to start
+        arrow.moveTo(mid + thick / 2,delta); // upper right corner of stem
+        arrow.lineTo(mid - thick / 2, delta); // upper left corner of stem
+        arrow.lineTo(mid - thick / 2, stem); // left junction of stem and arrow
+        arrow.lineTo(delta, stem); // left point of arrow
+        arrow.lineTo(size/2 + delta, size + delta); // tip of arrow
+        arrow.lineTo(size, stem); // right point of arrow
+        arrow.lineTo(mid + thick / 2, stem); // right junction of stem and arrow
+        arrow.lineTo(mid + thick / 2, delta); // back to start
 
         switch (getButtonState())
         {
