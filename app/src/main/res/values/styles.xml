@@ -23,6 +23,7 @@
     <color name="labelTextColor">#FFF</color>
     <color name="contextTextLine">#E0E0E0</color>
     <color name="activeTextLine">#FCCA01</color>
+    <color name="recordedTextLine">#00A000</color>
     <color name="navButtonTextColor">#F0F0F0</color>
     <color name="navButtonLawColor">#353870</color>
     <color name="navButtonHistoryColor">#232653</color>

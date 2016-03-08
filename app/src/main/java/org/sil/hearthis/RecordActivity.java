@@ -13,6 +13,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -104,6 +105,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 			//lineView.setTypeface(mtfl, 0);
 
 			_linesView.addView(lineView);
+			setTextColor(i);
 			lineView.setOnTouchListener(this);
 		}
 
@@ -174,12 +176,25 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		}
 		setActiveLine(_activeLine + 1);
 	}
+
+	void setTextColor(int lineNo) {
+		TextView lineView = (TextView) _linesView.getChildAt(lineNo);
+		int lineColor = getResources().getColor(R.color.contextTextLine);
+		if (lineNo == _activeLine) {
+			lineColor = getResources().getColor(R.color.activeTextLine);
+		} else {
+			String recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, lineNo);
+			if (new File(recordingFilePath).exists()) {
+				lineColor = getResources().getColor(R.color.recordedTextLine);
+			}
+		}
+		lineView.setTextColor(lineColor);
+	}
 	void setActiveLine(int lineNo) {
-		TextView lineView = (TextView) _linesView.getChildAt(_activeLine);
-		lineView.setTextColor(getResources().getColor(R.color.contextTextLine));
+		int oldLine = _activeLine;
 		_activeLine = lineNo;
-		lineView = (TextView) _linesView.getChildAt(_activeLine);
-		lineView.setTextColor(getResources().getColor(R.color.activeTextLine));
+		setTextColor(oldLine);
+		setTextColor(_activeLine);
 
 		ScrollView scrollView = (ScrollView) _linesView.getParent();
 		int[] tops = new int[_linesView.getChildCount() + 1];
