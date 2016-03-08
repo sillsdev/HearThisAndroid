@@ -63,4 +63,19 @@ public class SampleScriptProvider implements IScriptProvider {
         return "TheOneSampleRecording.mp4";
     }
 
+	@Override
+	public BibleLocation getLocation() {
+		return null; // simulate no saved location.
+	}
+
+	@Override
+	public void saveLocation(BibleLocation location) {
+
+	}
+
+	@Override
+	public String getProjectName() {
+		return "Sample";
+	}
+
 }

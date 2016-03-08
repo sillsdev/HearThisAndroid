@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import Script.FileSystem;
 import Script.IFileSystem;
 import Script.IScriptProvider;
+import Script.Project;
 import Script.RealFileSystem;
 import Script.RealScriptProvider;
 
@@ -19,8 +20,9 @@ import Script.RealScriptProvider;
  */
 public class ServiceLocator {
     String externalFilesDirectory;
-    IScriptProvider scriptProvider;
+    private IScriptProvider scriptProvider;
     private FileSystem fileSystem;
+    private Project project;
     static ServiceLocator theOneInstance = new ServiceLocator();
 
     // When you need the service locator call this to get it.
@@ -66,5 +68,11 @@ public class ServiceLocator {
     }
     public void setScriptProvider(IScriptProvider sp) {
         scriptProvider = sp;
+    }
+
+    public Project getProject() {
+        if (project == null)
+            project = new Project(getScriptProvider().getProjectName(), getScriptProvider());
+        return project;
     }
 }

@@ -15,4 +15,8 @@ public interface IScriptProvider {
     String getEthnologueCode();
     void noteBlockRecorded(int bookNumber, int chapter1Based, int blockNo);
     String getRecordingFilePath(int bookNumber, int chapter1Based, int blockNo);
+    BibleLocation getLocation();
+    void saveLocation(BibleLocation location);
+    String getProjectName();
 }
+

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
+import Script.BibleLocation;
 import Script.BookInfo;
 import Script.IScriptProvider;
 import Script.ScriptLine;
@@ -77,7 +78,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
             _chapNum = extras.getInt("chapter");
             _bookNum = book.BookNumber;
             _provider = book.getScriptProvider();
-            _activeLine = 0;
+            _activeLine = extras.getInt("line", 0);
         }
         else {
             // re-created, maybe after rotate, maybe eventually we start up here?
@@ -136,7 +137,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 			}
 		});
 		if (_lineCount > 0)
-			setActiveLine(0);
+			setActiveLine(_activeLine);
 		levelMeter = (LevelMeterView) findViewById(R.id.levelMeter);
 	}
 
@@ -150,6 +151,11 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 	protected void onPause() {
 		super.onPause();
 		stopMonitoring(); //  don't want to waste cycles monitoring while paused.
+		BibleLocation location = new BibleLocation();
+		location.bookNumber = _bookNum;
+		location.chapterNumber = _chapNum;
+		location.lineNumber = _activeLine;
+		_provider.saveLocation(location);
 	}
 
 	@Override

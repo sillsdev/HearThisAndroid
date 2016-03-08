@@ -10,9 +10,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -372,6 +369,49 @@ public class RealScriptProvider implements IScriptProvider {
         if (chap == null)
             return null; // or throw??
         return chap.recordingFilePath(blockNo);
+    }
+
+    String getStatusPath() {
+        return _path+ "/status.txt";
+    }
+
+    @Override
+    public BibleLocation getLocation() {
+        String statusPath = getStatusPath();
+        if (!getFileSystem().FileExists(statusPath))
+            return null;
+        String content;
+        try {
+            content = getFileSystem().getFile(statusPath);
+        } catch (IOException e) {
+            return null;
+        }
+        String[] parts = content.split(";");
+        if (parts.length != 3)
+            return null;
+        BibleLocation result = new BibleLocation();
+        result.bookNumber = Integer.parseInt(parts[0]);
+        result.chapterNumber = Integer.parseInt(parts[1]);
+        result.lineNumber = Integer.parseInt(parts[2]);
+        return result;
+    }
+
+    @Override
+    public void saveLocation(BibleLocation location) {
+        try {
+            getFileSystem().putFile(getStatusPath(),
+                    String.format("%d;%d;%d", location.bookNumber, location.chapterNumber, location.lineNumber));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public String getProjectName() {
+        int slashIndex = _path.lastIndexOf('/');
+        if (slashIndex < 0)
+            return _path;
+        return _path.substring(slashIndex + 1, _path.length());
     }
 
 }
