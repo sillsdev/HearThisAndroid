@@ -21,6 +21,8 @@
     <string name="choose_chapter">Choose a chapter</string>
     <string name="sync_title">Synchronize</string>
     <string name="record_title">HearThis Recording</string>
+    <string name="text_scale">Text Scale</string>
+    <string name="scale_pref_summary">Scale for recording text</string>
     <string name="hello_world">Hello world!</string>
     <string name="noProject">No projects found. Please choose a project in HearThis Desktop and synchronize it using the Sync button.</string>
 

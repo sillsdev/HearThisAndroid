@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <FloatPreference
+        android:key="text_scale"
+        android:title="@string/text_scale"
+        android:summary="@string/scale_pref_summary"
+        android:defaultValue="1.0f" />
+</PreferenceScreen>

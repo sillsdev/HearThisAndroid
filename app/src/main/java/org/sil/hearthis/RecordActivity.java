@@ -30,15 +30,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class RecordActivity extends Activity implements View.OnTouchListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
 	
 	int _activeLine;
-	ViewGroup _linesView;
+	LinesView _linesView;
 	int _lineCount;
     int _bookNum;
     int _chapNum;
@@ -91,7 +89,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
         _lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		_linesView = (ViewGroup) findViewById(R.id.textLineHolder);
+		_linesView = (LinesView) findViewById(R.id.textLineHolder);
 		_linesView.removeAllViews();
 		
 		for (int i = 0; i < _lineCount; i++) {
@@ -108,6 +106,8 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 			_linesView.addView(lineView);
 			lineView.setOnTouchListener(this);
 		}
+
+		_linesView.updateScale(); // do this AFTER we get the original size above!
 		
 		nextButton =  (NextButton) findViewById(R.id.nextButton);
 		nextButton.setOnClickListener(new OnClickListener() {
