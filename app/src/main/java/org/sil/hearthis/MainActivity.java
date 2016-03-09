@@ -58,20 +58,29 @@ public class MainActivity extends Activity {
 		if (rootDirs.isEmpty()) {
 			return false; // Leave the main activity active (allows user to sync a project).
 		}
+		if (rootDirs.size() > 1) // Todo: and we haven't remembered a location!
+		{
+			startActivity(new Intent(this, ChooseProjectActivity.class));
+			return true;
+		}
+		launchProject(this);
+		return true;
+	}
+
+	public static void launchProject(Activity parent) {
 		IScriptProvider provider = ServiceLocator.getServiceLocator().getScriptProvider();
 		BibleLocation location = provider.getLocation();
 		if (location != null) {
-			Intent record = new Intent(this, RecordActivity.class);
+			Intent record = new Intent(parent, RecordActivity.class);
 			Project project = ServiceLocator.getServiceLocator().getProject();
 			record.putExtra("bookInfo", project.Books.get(location.bookNumber));
 			record.putExtra("chapter", location.chapterNumber);
 			record.putExtra("line", location.lineNumber);
-			startActivity(record);
+			parent.startActivity(record);
 		} else {
-			Intent chooseBook = new Intent(MainActivity.this, ChooseBookActivity.class);
-			startActivity(chooseBook);
+			Intent chooseBook = new Intent(parent, ChooseBookActivity.class);
+			parent.startActivity(chooseBook);
 		}
-		return true;
 	}
 
 	void LaunchSyncActivity() {

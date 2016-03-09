@@ -17,6 +17,7 @@
     <string name="continue_button_caption">Continue</string>
     <string name="title_activity_choose_book">ChooseBookActivity</string>
     <string name="sync_success">Sync completed successfully!</string>
+    <string name="choose_project">Choose a project</string>
     <string name="choose_book">Choose a book</string>
     <string name="choose_chapter">Choose a chapter</string>
     <string name="sync_title">Synchronize</string>
