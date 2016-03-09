@@ -10,23 +10,27 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <ScrollView
-            android:id="@+id/textScrollView"
+        <view class="org.sil.hearthis.LinesView"
+            android:id="@+id/zoomView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:stretchColumns="*"
-			android:layout_span="3"
-			android:background="@color/mainBackground" >
-
-            <view class="org.sil.hearthis.LinesView"
-             	android:id="@+id/textLineHolder"
+            android:layout_span="3">
+            <ScrollView
+                android:id="@+id/textScrollView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:background="@color/mainBackground" >
-            </view>
-        </ScrollView>
+                <LinearLayout
+                    android:id="@+id/textLineHolder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/mainBackground" >
+                </LinearLayout>
+            </ScrollView>
+        </view>
 
     </TableRow>
 

@@ -30,14 +30,14 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class RecordActivity extends Activity implements View.OnTouchListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
+public class RecordActivity extends Activity implements View.OnClickListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
 	
 	int _activeLine;
-	LinesView _linesView;
+	LinearLayout _linesView;
 	int _lineCount;
     int _bookNum;
     int _chapNum;
@@ -90,7 +90,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
         _lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		_linesView = (LinesView) findViewById(R.id.textLineHolder);
+		_linesView = (LinearLayout) findViewById(R.id.textLineHolder);
 		_linesView.removeAllViews();
 		
 		for (int i = 0; i < _lineCount; i++) {
@@ -106,10 +106,10 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 
 			_linesView.addView(lineView);
 			setTextColor(i);
-			lineView.setOnTouchListener(this);
+			lineView.setOnClickListener(this);
 		}
 
-		_linesView.updateScale(); // do this AFTER we get the original size above!
+		((LinesView) findViewById(R.id.zoomView)).updateScale();
 		
 		nextButton =  (NextButton) findViewById(R.id.nextButton);
 		nextButton.setOnClickListener(new OnClickListener() {
@@ -121,7 +121,7 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 		});
 		
 		recordButton =  (RecordButton) findViewById(R.id.recordButton);
-		recordButton.setOnTouchListener(new OnTouchListener() {
+		recordButton.setOnTouchListener(new View.OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent e) {
@@ -449,11 +449,11 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
         return false;
     }
 
+	// Handles click in text line, based on call to setOnClickListener for each child
 	@Override
-	public boolean onTouch(View view, MotionEvent motionEvent) {
+	public void onClick(View view) {
 		int newLine = _linesView.indexOfChild(view);
 		setActiveLine(newLine);
-		return false;
 	}
 
 	@Override
