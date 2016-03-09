@@ -62,7 +62,8 @@ public class LevelMeterView extends View {
         for (int i = 0; i < ledsToShow; i++) {
             int left = i * (gap + ledWidth);
             Paint howToPaint = goodLevelPaint;
-            if (i > ledCount * 8/10) {
+            // Top 3db is dangerous...about 2 leds.
+            if (i >= ledCount - 2) {
                 howToPaint = badLevelPaint;
             }
             canvas.drawRect((float)left, (float) top, (float) ledWidth + left, (float) top + barHeight, howToPaint);

@@ -37,7 +37,7 @@
     <color name="navButtonRevelationColor">#232653</color>
     <color name="navButtonUntranslatedColor">#5F5F5F</color>"
     <color name="defaultTextColor">#FFF</color> <!-- Not sure this is what I wanted...accidental undo lost original-->
-    <color name="goodLevelColor">#070</color>
+    <color name="goodLevelColor">#5F5F5F</color> <!-- matching audioButtonDisabledColor. Previous 070 was found distracting. -->
     <color name="badLevelColor">#F00</color>
     <color name="audioButtonBlueColor">#232653</color>
     <color name="buttonWaitingColor">#D70200</color>

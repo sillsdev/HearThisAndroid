@@ -458,7 +458,19 @@ public class RecordActivity extends Activity implements View.OnTouchListener, Wa
 
 	@Override
 	public void maxLevel(int level) {
-		levelMeter.setLevel(level *100 / Short.MAX_VALUE);
+		double percentMax = (double)level / 32768;
+		// definition of decibels is that 0db is the maximum level possible
+		// other levels are negative numbers, 20 times the log of the max level.
+		// The effect is that each -6 db corresponds roughly to half the
+		// maximum level.
+		double db = 20 * Math.log10(percentMax);
+		// -48db is a very low level of ambient noise. -36db is considered satisfactory
+		// for field recordings. Decided to compromise and make our scale 40db long.
+		// This means each 2db corresponds to one LED. A good level of ambient noise is
+		// therefore no more than two leds (36db).
+		// So, we want to scale so that 0 is -40db or less, 100 is 0db
+		int displayLevel = Math.max(0, 100 + (int) Math.round(db * 100 / 40));
+		levelMeter.setLevel(displayLevel);
 	}
 
 	@Override
