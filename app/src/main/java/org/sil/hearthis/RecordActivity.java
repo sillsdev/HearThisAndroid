@@ -46,6 +46,9 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
     static final String BOOK_NUM = "bookNumber";
     static final String CHAP_NUM = "chapterNumber";
     static final String ACTIVE_LINE = "activeLine";
+	boolean usingSpeaker;
+	boolean wasUsingSpeaker;
+	MediaPlayer playButtonPlayer;
 
 	//Typeface mtfl;
 
@@ -142,6 +145,10 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 		if (_lineCount > 0)
 			setActiveLine(_activeLine);
 		levelMeter = (LevelMeterView) findViewById(R.id.levelMeter);
+		AudioManager amAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+		amAudioManager.setMode(AudioManager.MODE_IN_CALL); //possibly next test only valid while in this mode?
+		wasUsingSpeaker = amAudioManager.isSpeakerphoneOn();
+		amAudioManager.setMode(AudioManager.MODE_NORMAL);
 	}
 
 	@Override
@@ -149,6 +156,11 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 		super.onResume();
 		// The activity has become visible (it is now "resumed").
 		startMonitoring();
+		if (usingSpeaker) {
+			AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+			amAudioManager.setMode(AudioManager.MODE_IN_CALL);
+			amAudioManager.setSpeakerphoneOn(true);
+		}
 	}
 	@Override
 	protected void onPause() {
@@ -159,12 +171,18 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 		location.chapterNumber = _chapNum;
 		location.lineNumber = _activeLine;
 		_provider.saveLocation(location);
+		if (usingSpeaker && !wasUsingSpeaker) {
+			AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+			amAudioManager.setMode(AudioManager.MODE_IN_CALL);
+			amAudioManager.setSpeakerphoneOn(false);
+			amAudioManager.setMode(AudioManager.MODE_NORMAL);
+		}
 	}
 
 	@Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putInt(CHAP_NUM, _chapNum);
-        savedInstanceState.putInt(BOOK_NUM,_bookNum);
+        savedInstanceState.putInt(BOOK_NUM, _bookNum);
         savedInstanceState.putInt(ACTIVE_LINE,_activeLine);
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -187,6 +205,7 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 			if (new File(recordingFilePath).exists()) {
 				lineColor = getResources().getColor(R.color.recordedTextLine);
 			}
+			//else if (_provider.noteBlockRecorded();)
 		}
 		lineView.setTextColor(lineColor);
 	}
@@ -401,9 +420,16 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 
 	// Todo: disable when no recording exists.
 	void playButtonClicked() {
+		if (playButtonPlayer != null) {
+			playButtonPlayer.stop();
+			playButtonPlayer.release();
+			playButtonPlayer = null;
+		}
+		else {
+		}
 		playButton.setPlaying(true);
-		MediaPlayer mp = new MediaPlayer();
-		mp.setOnCompletionListener(this);
+		playButtonPlayer = new MediaPlayer();
+		playButtonPlayer.setOnCompletionListener(this);
 		stopMonitoring();
 		try {
 			// Todo:  file name and location based on book, chapter, segment
@@ -415,10 +441,10 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
 			
 			File file = new File(_recordingFilePath);
-			mp.setDataSource(file.getAbsolutePath());
-			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
-			mp.prepare();
-			mp.start();
+			playButtonPlayer.setDataSource(file.getAbsolutePath());
+			playButtonPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+			playButtonPlayer.prepare();
+			playButtonPlayer.start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		
@@ -445,6 +471,17 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 			Intent choose = new Intent(this, ChooseBookActivity.class);
 			startActivity(choose);
 			return true;
+		}
+		else if (itemId == R.id.speakers) {
+			usingSpeaker = !item.isChecked();
+			item.setChecked(usingSpeaker);
+			// To get the sound over the main speaker when a headset is plugged in, we need
+			// to pretend to be in a call and set speakerphone mode. Nasty thing to do,
+			// but our users want it...
+			AudioManager amAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+			amAudioManager.setMode(usingSpeaker ? AudioManager.MODE_IN_CALL : AudioManager.MODE_NORMAL);
+			amAudioManager.setSpeakerphoneOn(usingSpeaker);
+
 		}
         return false;
     }
@@ -475,6 +512,8 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 
 	@Override
 	public void onCompletion(MediaPlayer mediaPlayer) {
+		playButtonPlayer.release();
+		playButtonPlayer = null;
 		playButton.setPlaying(false);
 		playButton.setButtonState(BtnState.Normal);
 		playButton.setIsDefault(false);

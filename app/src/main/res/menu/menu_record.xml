@@ -2,4 +2,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/sync" android:title="@string/sync_desktop"></item>
     <item android:id="@+id/choose" android:title="@string/choose_passage"></item>
+    <item android:id="@+id/speakers" android:title="Play using speaker" android:checkable="true"></item>
 </menu>
