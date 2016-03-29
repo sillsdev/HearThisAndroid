@@ -205,7 +205,9 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 			if (new File(recordingFilePath).exists()) {
 				lineColor = getResources().getColor(R.color.recordedTextLine);
 			}
-			//else if (_provider.noteBlockRecorded();)
+			else if (_provider.hasRecording(_bookNum, _chapNum, lineNo)) {
+				lineColor = getResources().getColor(R.color.recordedElsewhereTextLine);
+			}
 		}
 		lineView.setTextColor(lineColor);
 	}

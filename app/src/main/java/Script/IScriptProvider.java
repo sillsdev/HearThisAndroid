@@ -18,5 +18,9 @@ public interface IScriptProvider {
     BibleLocation getLocation();
     void saveLocation(BibleLocation location);
     String getProjectName();
+    // True if it has a recording as indicated by the most recently loaded chapter file.
+    // Not (yet) updated by new recordings and possibly not by syncs.
+    // Intended to be consulted only if there is NOT a local recording.
+    boolean hasRecording(int bookNumber, int chapter1Based, int blockNo);
 }
 

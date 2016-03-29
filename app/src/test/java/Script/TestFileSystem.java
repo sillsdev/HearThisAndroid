@@ -1,17 +1,28 @@
 package Script;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 /**
  * A simple simulated file system achieved as a dictionary from path to string content
@@ -70,7 +81,7 @@ public class TestFileSystem implements IFileSystem {
                 "Haggai;\n" +
                 "Zechariah;\n" +
                 "Malachi;\n" +
-                "Matthew;0:1,12:6,25:12,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0\n" +
+                "Matthew;1:1,12:6,25:12,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0\n" +
                 "Mark;\n" +
                 "Luke;\n" +
                 "John;\n" +
@@ -104,7 +115,7 @@ public class TestFileSystem implements IFileSystem {
         return files.containsKey(path);
     }
 
-    public void SimulateFile(String path, String content) {
+    public void simulateFile(String path, String content) {
         files.put(path, content);
     }
     public void SimulateDirectory(String path) {
@@ -129,7 +140,7 @@ public class TestFileSystem implements IFileSystem {
     }
 
     public void WriteStreamClosed(String path, String content) {
-        SimulateFile(path, content);
+        simulateFile(path, content);
     }
 
     @Override
@@ -148,6 +159,71 @@ public class TestFileSystem implements IFileSystem {
             }
         }
         return result;
+    }
+
+    Element MakeElement(Document doc, Element parent, String name, String content) {
+        Element result = doc.createElement(name);
+        parent.appendChild(result);
+        result.setTextContent(content);
+        return result;
+    }
+
+    // Make a simulated info.txt file for the specified chapter. Contents are the specified lines.
+    // It also has recording elements for those recordingTexts which are non-null. It is OK to have
+    // fewer recordingTexts than lines, or even to pass null, in which case there will be no
+    // recordings element.
+    public void MakeChapterContent(String bookName, int chapNum, String[] lines, String[] recordingTexts) {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder;
+        try {
+            builder = factory.newDocumentBuilder();
+            Document doc = builder.newDocument();
+
+            Element root = doc.createElement("ChapterInfo");
+            root.setAttribute("Number", Integer.toString(chapNum));
+            doc.appendChild(root);
+
+            if (recordingTexts != null) {
+                Element recordings = doc.createElement("Recordings");
+                root.appendChild(recordings);
+                for (int iline = 0; iline < recordingTexts.length; iline++) {
+                    if (recordingTexts[iline] != null) {
+                        Element line = doc.createElement("ScriptLine");
+                        recordings.appendChild(line);
+                        MakeElement(doc, line, "LineNumber", Integer.toString(iline + 1));
+                        MakeElement(doc, line, "Text", recordingTexts[iline]);
+                    }
+                }
+            }
+
+            Element source = doc.createElement("Source");
+            root.appendChild(source);
+
+            for (int iline = 0; iline < lines.length; iline++) {
+                Element line = doc.createElement("ScriptLine");
+                source.appendChild(line);
+                MakeElement(doc, line, "LineNumber", Integer.toString(iline+1));
+                MakeElement(doc, line, "Text", lines[iline]);
+            }
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource domSource = new DOMSource(root);
+            OutputStream fos = WriteFile(project + "/" + bookName + "/" + chapNum + "/" + RealScriptProvider.infoFileName);
+            StreamResult streamResult = new StreamResult(fos);
+            transformer.transform(domSource, streamResult);
+            fos.flush();
+            fos.close();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
     }
 
     class NotifyCloseByteArrayStream extends ByteArrayOutputStream

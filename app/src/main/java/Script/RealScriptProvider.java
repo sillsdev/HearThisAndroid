@@ -30,7 +30,7 @@ public class RealScriptProvider implements IScriptProvider {
 	
 	String _path;
 	List<BookData> Books = new ArrayList<BookData>();
-    public String infoFileName = "info.xml";
+    public static String infoFileName = "info.xml";
     FileSystem getFileSystem() {
         return ServiceLocator.getServiceLocator().getFileSystem();
     }
@@ -40,6 +40,7 @@ public class RealScriptProvider implements IScriptProvider {
 		public int lineCount;
 		public int translatedCount; // not currently accurate; useful only for empty if 0.
 		String[] lines = new String[0];
+        String[] recordings = new String[0];
         String getChapFolder() {return _path + "/" + bookName + "/" + chapterNumber;}
         String getChapInfoFile() {return getChapFolder() + "/" + infoFileName;}
 
@@ -55,6 +56,7 @@ public class RealScriptProvider implements IScriptProvider {
             if (getFileSystem().FileExists(getChapInfoFile()))
             {
                 lines = new String[lineCount];
+                recordings = new String[lineCount];
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();
@@ -74,6 +76,25 @@ public class RealScriptProvider implements IScriptProvider {
                             }
                             else {
                                 lines[i] = "";
+                            }
+                        }
+                    }
+                    NodeList recordingNode = root.getElementsByTagName("Recordings");
+                    if (recordingNode.getLength() == 1) {
+                        // getChildren does not work because it also gets various text (white space) nodes.
+                        NodeList recordingNodes = ((Element)recordingNode.item(0)).getElementsByTagName("ScriptLine");
+                        for(int i = 0; i < recordingNodes.getLength(); i++) {
+                            Element line = (Element)recordingNodes.item(i);
+                            NodeList textNodes = line.getElementsByTagName("Text");
+                            NodeList numberNodes = line.getElementsByTagName("LineNumber");
+                            int lineNumber = -1;
+                            try {
+                                lineNumber = Integer.parseInt(numberNodes.item(0).getTextContent());
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace();
+                            }
+                            if (textNodes.getLength() > 0 && lineNumber >= 1 && lineNumber <= recordings.length) {
+                                recordings[lineNumber - 1] = textNodes.item(0).getTextContent();
                             }
                         }
                     }
@@ -116,15 +137,15 @@ public class RealScriptProvider implements IScriptProvider {
 //					lines[i] = "";
 //				}
 //			}
-			return lines;
-		}
+            return lines;
+        }
 
         final String recordingsEltName = "Recordings";
         final String lineNoEltName = "LineNumber";
+
         // When a line is recorded, we want to copy the content to the block that records what
         // was last recorded.
-        void noteLineRecorded(int lineNoZeroBased)
-        {
+        void noteLineRecorded(int lineNoZeroBased) {
             int lineNo = lineNoZeroBased + 1;
             try {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -165,17 +186,13 @@ public class RealScriptProvider implements IScriptProvider {
                 transformer.transform(domSource, streamResult);
                 fos.flush();
                 fos.close();
-            }
-            catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
-            }
-            catch (ParserConfigurationException e) {
+            } catch (ParserConfigurationException e) {
                 e.printStackTrace();
-            }
-            catch (SAXException e) {
+            } catch (SAXException e) {
                 e.printStackTrace();
-            }
-            catch (DOMException e) {
+            } catch (DOMException e) {
                 e.printStackTrace();
             } catch (TransformerConfigurationException e) {
                 e.printStackTrace();
@@ -184,12 +201,11 @@ public class RealScriptProvider implements IScriptProvider {
             }
         }
 
-        String incrementRecordingCount(String oldInfoTxt)
-        {
+        String incrementRecordingCount(String oldInfoTxt) {
             String ls = System.getProperty("line.separator");
             String[] lines = oldInfoTxt.split(ls);
             StringBuilder sb = new StringBuilder();
-            for(String line: lines) {
+            for (String line : lines) {
                 String[] parts = line.split(";");
                 if (!(parts[0].equals(bookName))) {
                     sb.append(line);
@@ -222,7 +238,7 @@ public class RealScriptProvider implements IScriptProvider {
         Element findChildByTagName(Element parent, String name) {
             NodeList list = parent.getElementsByTagName(name);
             if (list.getLength() > 0)
-                return (Element)list.item(0);
+                return (Element) list.item(0);
             return null;
         }
 
@@ -233,10 +249,9 @@ public class RealScriptProvider implements IScriptProvider {
             return child.getTextContent();
         }
 
-        Node findNodeByEltValue(NodeList nodes, String childName, String val)
-        {
+        Node findNodeByEltValue(NodeList nodes, String childName, String val) {
             for (int i = 0; i < nodes.getLength(); i++) {
-                Element item = (Element)nodes.item(i);
+                Element item = (Element) nodes.item(i);
                 if (findChildContentByTagName(item, childName).equals(val))
                     return item;
             }
@@ -253,7 +268,17 @@ public class RealScriptProvider implements IScriptProvider {
             }
             return null;
         }
-	}
+
+        public boolean hasRecording(int blockNo) {
+            getLines(); // Make sure we've read the data file if any
+            if (recordings == null)
+                return false;
+            if (blockNo >= recordings.length)
+                return false;
+            String recording = recordings[blockNo];
+            return recording != null && recording.length() > 0;
+        }
+    }
 	class BookData {
 		public String name;
 		public List<ChapterData> chapters = new ArrayList<ChapterData>();
@@ -412,6 +437,14 @@ public class RealScriptProvider implements IScriptProvider {
         if (slashIndex < 0)
             return _path;
         return _path.substring(slashIndex + 1, _path.length());
+    }
+
+    @Override
+    public boolean hasRecording(int bookNumber, int chapter1Based, int blockNo) {
+        ChapterData chap = GetChapter(bookNumber, chapter1Based);
+        if (chap == null)
+            return false;
+        return chap.hasRecording(blockNo);
     }
 
 }

@@ -78,4 +78,9 @@ public class SampleScriptProvider implements IScriptProvider {
 		return "Sample";
 	}
 
+	@Override
+	public boolean hasRecording(int bookNumber, int chapter1Based, int blockNo) {
+		return false;
+	}
+
 }

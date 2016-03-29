@@ -58,7 +58,7 @@ public class RealScriptProviderTest {
         fs = new TestFileSystem();
         fs.externalFilesDirectory = "root";
         fs.project = "test";
-        fs.SimulateFile(fs.getInfoTxtPath(), genEx);
+        fs.simulateFile(fs.getInfoTxtPath(), genEx);
 
         ServiceLocator.getServiceLocator().setFileSystem(new FileSystem(fs));
         return new RealScriptProvider(fs.getProjectDirectory());
@@ -75,7 +75,7 @@ public class RealScriptProviderTest {
 
     private void addEx0Chapter(TestFileSystem fs) {
         String path = getEx0Path(fs);
-        fs.SimulateFile(path, ex0);
+        fs.simulateFile(path, ex0);
     }
 
     private String getEx0Path(TestFileSystem fs) {
@@ -176,7 +176,7 @@ public class RealScriptProviderTest {
         String ex0Path = getEx0Path(fs);
         String original = fs.getFile(ex0Path);
         String updated = original.replace("Some Introduction First", "New Introduction");
-        fs.SimulateFile(ex0Path, updated);
+        fs.simulateFile(ex0Path, updated);
 
         sp.noteBlockRecorded(1, 0, 1); // should overwrite
 

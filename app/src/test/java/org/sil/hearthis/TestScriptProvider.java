@@ -80,4 +80,9 @@ public class TestScriptProvider implements IScriptProvider {
     public String getProjectName() {
         return "Test";
     }
+
+    @Override
+    public boolean hasRecording(int bookNumber, int chapter1Based, int blockNo) {
+        return false;
+    }
 }
