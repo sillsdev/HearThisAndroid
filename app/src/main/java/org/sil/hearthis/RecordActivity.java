@@ -322,6 +322,7 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 	}
 
 	void startRecording() {
+		stopPlaying();
 		recordButton.setButtonState(BtnState.Pushed);
 		recordButton.setWaiting(true);
 		if (useWaveRecorder) {
@@ -422,13 +423,7 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 
 	// Todo: disable when no recording exists.
 	void playButtonClicked() {
-		if (playButtonPlayer != null) {
-			playButtonPlayer.stop();
-			playButtonPlayer.release();
-			playButtonPlayer = null;
-		}
-		else {
-		}
+		stopPlaying();
 		playButton.setPlaying(true);
 		playButtonPlayer = new MediaPlayer();
 		playButtonPlayer.setOnCompletionListener(this);
@@ -452,7 +447,15 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 		}		
 	}
 
-    @Override
+	private void stopPlaying() {
+		if (playButtonPlayer != null) {
+			playButtonPlayer.stop();
+			playButtonPlayer.release();
+			playButtonPlayer = null;
+		}
+	}
+
+	@Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
         MenuInflater inflater = getMenuInflater();
