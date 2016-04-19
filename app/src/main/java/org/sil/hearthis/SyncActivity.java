@@ -33,6 +33,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     TextView ipView;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
     TextView progressView;
+    BluetoothSyncServer bluetoothServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +56,8 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     private void startSyncServer() {
         Intent serviceIntent = new Intent(this, SyncService.class);
         startService(serviceIntent);
+        bluetoothServer = new BluetoothSyncServer(this.getExternalFilesDir(null));
+        bluetoothServer.start();
     }
 
     @Override
@@ -64,6 +67,12 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
         RequestFileHandler.requestFileSentNotification((this));
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        bluetoothServer.cancel();
+        bluetoothServer = null;
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

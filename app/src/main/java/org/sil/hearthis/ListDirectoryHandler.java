@@ -30,9 +30,13 @@ public class ListDirectoryHandler implements HttpRequestHandler {
     }
     @Override
     public void handle(HttpRequest request, HttpResponse response, HttpContext httpContext) throws HttpException, IOException {
-        File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
+        response.setEntity(new StringEntity(getFileList(filePath, _parent.getExternalFilesDir(null))));
+    }
+
+    public static String getFileList(String filePath, File baseDir) {
+        String result = "";
         String path = baseDir  + "/" + filePath;
         File file = new File(path);
         StringBuilder sb = new StringBuilder();
@@ -48,10 +52,8 @@ public class ListDirectoryHandler implements HttpRequestHandler {
                 sb.append(f.isDirectory() ? "d" : "f");
                 sb.append("\n");
             }
-            response.setEntity(new StringEntity(sb.toString()));
+            result = sb.toString();
         }
-        else {
-            response.setEntity(new StringEntity(""));
-        }
+        return result;
     }
 }
