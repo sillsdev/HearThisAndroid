@@ -4,6 +4,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
+import Script.BibleLocation;
 import Script.IScriptProvider;
 import Script.ScriptLine;
 
@@ -64,5 +65,25 @@ public class TestScriptProvider implements IScriptProvider {
     @Override
     public String getRecordingFilePath(int bookNumber, int chapter1Based, int blockNo) {
         return null;
+    }
+
+    @Override
+    public BibleLocation getLocation() {
+        return null;
+    }
+
+    @Override
+    public void saveLocation(BibleLocation location) {
+
+    }
+
+    @Override
+    public String getProjectName() {
+        return null;
+    }
+
+    @Override
+    public boolean hasRecording(int bookNumber, int chapter1Based, int blockNo) {
+        return false;
     }
 }
