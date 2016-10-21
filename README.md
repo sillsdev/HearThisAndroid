@@ -14,7 +14,9 @@ I have Android SDK platforms installed for 6.0 (Marshmallow/23) and 4.3 (Jelly B
 #Testing
 HearThis Android only has minimal automated tests and I have had extreme difficulty getting even that far. I can't get any of them to work with the current version of Android Studio (not that I've spent much effort so far). Both sets ran earlier after many struggles to set up the right build configurations.
 
-1. In app\src\test\java\org\sil\hearthis\BookButtonTest.java are some simple tests designed to run without needing an emulator or real android but directly in JUnit.
+1. In app\src\test\java\org\sil\hearthis\BookButtonTest.java are some simple tests designed to run without needing an emulator or real android but directly in JUnit. One way to run these tests is to right-click BookButtonTest in the Project panel on the top left and choose "Run 'BookButtonTest'". 
+To run tests in multiple files, I had to edit build configurations (Run/Edit configurations). If you do this right after a right-click on org.sil.hearthis and "Run tests in '...'" the configuration it is trying to use will be selected. I was not able to get anywhere with running tests by 'All in package', but if you choose 'all in directory' and configure the directory to be a path to <HearThisAndroid>\app\src\test\java\org\sil\hearthis, it runs the right tests. Possibly the problem is that I have the test directory in the wrong place.
+Unfortunately wherever it saves the build configurations does not seem to be checked in.
 2. In app\src\androidTest\java\org\sil\hearthis\MainActivityTest.java are some very minimal tests designed to run on an emulator or real device. I believe these also worked once.
 
 The second group of tests currently all fail; my recent attempts to run the others result in reports that no tests are found to run.
