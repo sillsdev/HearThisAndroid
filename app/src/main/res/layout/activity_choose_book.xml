@@ -11,17 +11,21 @@
         android:layout_height="wrap_content" >
         android:layout_weight="1"
 
-        <org.apmem.tools.layouts.FlowLayout
-            android:id="@+id/booksFlow"
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:stretchColumns="*"
-            android:layout_span="2"
-            android:layout_weight="1"
-            >
-        </org.apmem.tools.layouts.FlowLayout>
+         <ScrollView
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_span="2"
+             android:layout_weight="1"
+             android:stretchColumns="*">
 
-    </TableRow>
+             <org.apmem.tools.layouts.FlowLayout
+                 android:id="@+id/booksFlow"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent">
+
+             </org.apmem.tools.layouts.FlowLayout>
+         </ScrollView>
+
+     </TableRow>
 
 </TableLayout>
