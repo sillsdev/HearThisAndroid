@@ -7,18 +7,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class ChooseChapterActivity extends Activity {
+public class ChooseChapterActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chapters);
-		getActionBar().setTitle(R.string.choose_chapter);
+		getSupportActionBar().setTitle(R.string.choose_chapter);
 		ServiceLocator.getServiceLocator().init(this);
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();

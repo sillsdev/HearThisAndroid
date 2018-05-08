@@ -22,6 +22,7 @@ import android.media.MediaRecorder.AudioEncoder;
 import android.media.MediaRecorder.AudioSource;
 import android.media.MediaRecorder.OutputFormat;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -34,7 +35,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class RecordActivity extends Activity implements View.OnClickListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
+public class RecordActivity extends AppCompatActivity implements View.OnClickListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
 	
 	int _activeLine;
 	LinearLayout _linesView;
@@ -69,7 +70,7 @@ public class RecordActivity extends Activity implements View.OnClickListener, Wa
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
-		getActionBar().setTitle(R.string.record_title);
+		getSupportActionBar().setTitle(R.string.record_title);
 		
 		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
 		

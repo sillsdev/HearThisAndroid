@@ -2,8 +2,8 @@ package org.sil.hearthis;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,7 +24,7 @@ import java.util.Date;
 import java.util.Enumeration;
 
 
-public class SyncActivity extends ActionBarActivity implements AcceptNotificationHandler.NotificationListener,
+public class SyncActivity extends AppCompatActivity implements AcceptNotificationHandler.NotificationListener,
         AcceptFileHandler.IFileReceivedNotification,
     RequestFileHandler.IFileSentNotification {
 
@@ -38,7 +38,7 @@ public class SyncActivity extends ActionBarActivity implements AcceptNotificatio
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
-        getActionBar().setTitle(R.string.sync_title);
+        getSupportActionBar().setTitle(R.string.sync_title);
         startSyncServer();
         progressView = (TextView)findViewById(R.id.progress);
         continueButton = (Button)findViewById(R.id.continue_button);

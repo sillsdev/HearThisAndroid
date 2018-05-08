@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 27
 
     defaultConfig {
         applicationId "org.sil.hearthis"
         minSdkVersion 18 // gradle insists it can't be smaller than this
-        targetSdkVersion 21
+        targetSdkVersion 27
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -18,12 +17,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+
+    // Required for using the obsolete HttpClient class.
+    useLibrary 'org.apache.http.legacy'
 }
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:19.1.0'
-    compile 'com.android.support:support-v4:19.1.0'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    //compile 'com.android.support:support-v7:27.1.1'
     compile 'com.google.zxing:core:3.1.0'
     compile 'com.google.zxing:android-integration:3.1.0'
     testCompile 'org.mockito:mockito-core:1.10.19'

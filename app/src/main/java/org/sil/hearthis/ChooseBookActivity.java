@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,7 +16,7 @@ import Script.IScriptProvider;
 import Script.Project;
 
 
-public class ChooseBookActivity extends Activity {
+public class ChooseBookActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,7 +24,7 @@ public class ChooseBookActivity extends Activity {
         setContentView(R.layout.activity_choose_book);
         IScriptProvider scripture = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
         Project project = new Project("Sample", scripture);
-        getActionBar().setTitle(R.string.choose_book);
+        getSupportActionBar().setTitle(R.string.choose_book);
         setProject(project);
     }
 

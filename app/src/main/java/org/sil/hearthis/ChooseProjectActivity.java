@@ -1,7 +1,7 @@
 package org.sil.hearthis;
 
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import Script.FileSystem;
 import Script.RealScriptProvider;
 
-public class ChooseProjectActivity extends ActionBarActivity {
+public class ChooseProjectActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_project);
-        getActionBar().setTitle(R.string.choose_project);
+        getSupportActionBar().setTitle(R.string.choose_project);
         ServiceLocator.getServiceLocator().init(this);
         final ArrayList<String> rootDirs = getProjectRootDirectories();
         ListView projectsList = (ListView) findViewById(R.id.projects_list);
