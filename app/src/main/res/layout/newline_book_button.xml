@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <org.sil.hearthis.BookButton xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:f="http://schemas.android.com/apk/res/org.sil.hearthis"
+	xmlns:f="http://schemas.android.com/apk/res-auto"
     android:minWidth="30dp"
     android:minHeight="30dp"
     android:layout_width="wrap_content"
