@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 29
 
     defaultConfig {
         applicationId "org.sil.hearthis"
         minSdkVersion 18 // gradle insists it can't be smaller than this
-        targetSdkVersion 27
+        targetSdkVersion 29
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
