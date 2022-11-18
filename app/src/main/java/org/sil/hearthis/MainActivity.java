@@ -1,9 +1,6 @@
 package org.sil.hearthis;
 
-import org.sil.palaso.Graphite;
-
 import Script.BibleLocation;
-import Script.BookInfo;
 import Script.FileSystem;
 import Script.IScriptProvider;
 import Script.Project;
@@ -13,14 +10,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.view.MotionEvent;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends Activity {
