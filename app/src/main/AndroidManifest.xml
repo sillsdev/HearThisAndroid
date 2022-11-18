@@ -11,8 +11,9 @@
         android:targetSdkVersion="21" /
     -->
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Don't know why I thought we needed this. HTA does everything in its private external files directory.
+    uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /-->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- uses-permission android:name="android.permission.READ_PHONE_STATE" / -->
     <uses-permission android:name="android.permission.INTERNET" />
