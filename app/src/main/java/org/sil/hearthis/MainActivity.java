@@ -7,9 +7,12 @@ import Script.Project;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -36,7 +39,7 @@ public class MainActivity extends Activity {
 				LaunchSyncActivity();
 			}
 		});
-		
+
 		if (requestRecordAudioPermission()) {
 			// We already have permission to record audio, proceed normally.
 			launchChooseBookIfProject();
@@ -66,26 +69,44 @@ public class MainActivity extends Activity {
 		if (ContextCompat.checkSelfPermission(this,
 				Manifest.permission.RECORD_AUDIO)
 				!= PackageManager.PERMISSION_GRANTED) {
-
-			// Permission is not granted
-			// Should we show an explanation? This test returns true if the user has previously
-			// denied it. I don't think it's worth trying to explain why HTA needs this permission;
-			// it's too obvious. If we decide to, this is how.
-			//if (ActivityCompat.shouldShowRequestPermissionRationale(thisActivity,
-			//		Manifest.permission.READ_CONTACTS)) {
-				// Show an explanation to the user *asynchronously* -- don't block
-				// this thread waiting for the user's response! After the user
-				// sees the explanation, try again to request the permission.
-			//} else {
+			// We don't yet have permission.
+			// We will ask again, if necessary, when the user presses the record button.
+			// But we really want it now so the volume meter can work. Explain this while requesting.
+			// Using a toast didn't work.
+			//Toast.makeText(MainActivity.this, R.string.record_for_volume, Toast.LENGTH_LONG).show();
+			// This is a somewhat more standard way to decide whether to explain that we need
+			// permission.
+			if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+					Manifest.permission.RECORD_AUDIO)) {
+				new AlertDialog.Builder(this)
+						.setTitle(R.string.need_permissions)
+						.setMessage(R.string.record_for_volume)
+						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								ActivityCompat.requestPermissions(MainActivity.this,
+										new String[]{Manifest.permission.RECORD_AUDIO},
+										MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+							}
+						})
+						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								// No permission, proceed as usual
+								launchChooseBookIfProject();
+							}
+						})
+						.create().show();
+			} else {
 				// No explanation needed, we can request the permission.
 				ActivityCompat.requestPermissions(this,
-						new String[] {Manifest.permission.RECORD_AUDIO},
+						new String[]{Manifest.permission.RECORD_AUDIO},
 						MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
 
 				// MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
 				// app-defined int constant. The callback method gets the
 				// result of the request.
-			//}
+			}
 			return false;
 		} else {
 			// Permission has already been granted
@@ -93,6 +114,8 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	// This doesn't really do anything useful at present; just keeping it in case we want
+	// to do anything about receiving a grant/deny message.
 	@Override
 	public void onRequestPermissionsResult(
 			int requestCode,
@@ -100,20 +123,15 @@ public class MainActivity extends Activity {
 			int[] grantResults) {
 		switch (requestCode) {
 			case MY_PERMISSIONS_REQUEST_RECORD_AUDIO:
-				if (grantResults.length > 0
-						&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-					// We have our essential permission, go ahead as we normally would when first
-					// created, if we didn't need to stop and ask permission
-					launchChooseBookIfProject();
-				} else {
-					// The user denied permission to record audio. We can't do much useful.
-					// However, leaving this activity active, which is all about needing to sync,
-					// is not helpful (if the user has already done that). We may improve on this
-					// eventually, but for now, we'll display a toast and move to he next
-					// activity normally so they can find out for themselves how crippled the app
-					// is without this permission.
-					// If we stick with this basic approach we may want to make this more conspicuous.
-					Toast.makeText(MainActivity.this, R.string.no_use_without_record, Toast.LENGTH_LONG).show();
+				if (grantResults.length > 0) {
+					if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+						// We have our essential permission. Nothing special to do, just means the
+						// volume meter will start working
+					} else {
+						// The user denied permission to record audio. We'll ask again if they try
+						// to record.
+					}
+					// Either way, once the user closes the dialog, show the appropriate next activity.
 					launchChooseBookIfProject();
 				}
 		}

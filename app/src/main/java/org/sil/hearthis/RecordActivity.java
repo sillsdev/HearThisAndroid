@@ -9,10 +9,12 @@ import Script.BookInfo;
 import Script.IScriptProvider;
 import Script.ScriptLine;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -22,6 +24,9 @@ import android.media.MediaRecorder.AudioSource;
 import android.media.MediaRecorder.OutputFormat;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -33,19 +38,20 @@ import android.view.View.OnClickListener;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class RecordActivity extends AppCompatActivity implements View.OnClickListener, WavAudioRecorder.IMonitorListener, MediaPlayer.OnCompletionListener {
-	
+
 	int _activeLine;
 	LinearLayout _linesView;
 	int _lineCount;
-    int _bookNum;
-    int _chapNum;
-    IScriptProvider _provider;
+	int _bookNum;
+	int _chapNum;
+	IScriptProvider _provider;
 
-    static final String BOOK_NUM = "bookNumber";
-    static final String CHAP_NUM = "chapterNumber";
-    static final String ACTIVE_LINE = "activeLine";
+	static final String BOOK_NUM = "bookNumber";
+	static final String CHAP_NUM = "chapterNumber";
+	static final String ACTIVE_LINE = "activeLine";
 	boolean usingSpeaker;
 	boolean wasUsingSpeaker;
 	MediaPlayer playButtonPlayer;
@@ -70,32 +76,31 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
 		getSupportActionBar().setTitle(R.string.record_title);
-		
+
 		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
-		
+
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
-		BookInfo book = (BookInfo)extras.get("bookInfo");
-        if (book != null) {
-            // invoked from chapter page
-            _chapNum = extras.getInt("chapter");
-            _bookNum = book.BookNumber;
-            _provider = book.getScriptProvider();
-            _activeLine = extras.getInt("line", 0);
-        }
-        else {
-            // re-created, maybe after rotate, maybe eventually we start up here?
-            _chapNum = savedInstanceState.getInt(CHAP_NUM);
-            _bookNum = savedInstanceState.getInt(BOOK_NUM);
-            _activeLine = savedInstanceState.getInt(ACTIVE_LINE);
-            _provider = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
-        }
-        _lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
+		BookInfo book = (BookInfo) extras.get("bookInfo");
+		if (book != null) {
+			// invoked from chapter page
+			_chapNum = extras.getInt("chapter");
+			_bookNum = book.BookNumber;
+			_provider = book.getScriptProvider();
+			_activeLine = extras.getInt("line", 0);
+		} else {
+			// re-created, maybe after rotate, maybe eventually we start up here?
+			_chapNum = savedInstanceState.getInt(CHAP_NUM);
+			_bookNum = savedInstanceState.getInt(BOOK_NUM);
+			_activeLine = savedInstanceState.getInt(ACTIVE_LINE);
+			_provider = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
+		}
+		_lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		_linesView = (LinearLayout) findViewById(R.id.textLineHolder);
 		_linesView.removeAllViews();
-		
+
 		for (int i = 0; i < _lineCount; i++) {
 			ScriptLine line = _provider.GetLine(_bookNum, _chapNum, i);
 			TextView lineView = (TextView) inflater.inflate(R.layout.text_line, null);
@@ -113,8 +118,8 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 
 		((LinesView) findViewById(R.id.zoomView)).updateScale();
-		
-		nextButton =  (NextButton) findViewById(R.id.nextButton);
+
+		nextButton = (NextButton) findViewById(R.id.nextButton);
 		nextButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -122,8 +127,8 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 				nextButtonClicked();
 			}
 		});
-		
-		recordButton =  (RecordButton) findViewById(R.id.recordButton);
+
+		recordButton = (RecordButton) findViewById(R.id.recordButton);
 		recordButton.setOnTouchListener(new View.OnTouchListener() {
 
 			@Override
@@ -133,8 +138,8 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			}
 
 		});
-		
-		playButton =  (PlayButton) findViewById(R.id.playButton);
+
+		playButton = (PlayButton) findViewById(R.id.playButton);
 		playButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -145,7 +150,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		if (_lineCount > 0)
 			setActiveLine(_activeLine);
 		levelMeter = (LevelMeterView) findViewById(R.id.levelMeter);
-		AudioManager amAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+		AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 		amAudioManager.setMode(AudioManager.MODE_IN_CALL); //possibly next test only valid while in this mode?
 		wasUsingSpeaker = amAudioManager.isSpeakerphoneOn();
 		amAudioManager.setMode(AudioManager.MODE_NORMAL);
@@ -162,6 +167,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			amAudioManager.setSpeakerphoneOn(true);
 		}
 	}
+
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -180,13 +186,13 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	@Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putInt(CHAP_NUM, _chapNum);
-        savedInstanceState.putInt(BOOK_NUM, _bookNum);
-        savedInstanceState.putInt(ACTIVE_LINE,_activeLine);
-        super.onSaveInstanceState(savedInstanceState);
-    }
-	
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		savedInstanceState.putInt(CHAP_NUM, _chapNum);
+		savedInstanceState.putInt(BOOK_NUM, _bookNum);
+		savedInstanceState.putInt(ACTIVE_LINE, _activeLine);
+		super.onSaveInstanceState(savedInstanceState);
+	}
+
 	void nextButtonClicked() {
 		if (_activeLine >= _lineCount - 1) {
 			// Todo: move to start of next chapter or if need be book.
@@ -204,13 +210,13 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			String recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, lineNo);
 			if (new File(recordingFilePath).exists()) {
 				lineColor = getResources().getColor(R.color.recordedTextLine);
-			}
-			else if (_provider.hasRecording(_bookNum, _chapNum, lineNo)) {
+			} else if (_provider.hasRecording(_bookNum, _chapNum, lineNo)) {
 				lineColor = getResources().getColor(R.color.recordedElsewhereTextLine);
 			}
 		}
 		lineView.setTextColor(lineColor);
 	}
+
 	void setActiveLine(int lineNo) {
 		int oldLine = _activeLine;
 		_activeLine = lineNo;
@@ -269,21 +275,23 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 		return newScrollPos;
 	}
-	
+
 	void recordButtonTouch(MotionEvent e) {
+		if (!requestRecordAudioPermission())
+			return; // if we don't already have this, we can't record at this point.
 		int maskedAction = e.getActionMasked();
 
-	    switch (maskedAction) {
-		    case MotionEvent.ACTION_DOWN: {
-		    	startRecording();
-		      break;
-		    }
-		    case MotionEvent.ACTION_UP:
-		    case MotionEvent.ACTION_CANCEL: {
-		    	stopRecording();
-		      break;
-		    }
-	    }
+		switch (maskedAction) {
+			case MotionEvent.ACTION_DOWN: {
+				startRecording();
+				break;
+			}
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL: {
+				stopRecording();
+				break;
+			}
+		}
 	}
 
 	String _recordingFilePath = "";
@@ -301,7 +309,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		if (waveRecorder != null) {
 			waveRecorder.stop();
 			waveRecorder.release();
-			waveRecorder  = null;
+			waveRecorder = null;
 		}
 	}
 
@@ -338,7 +346,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			return;
 		}
 		if (recorder != null) {
-	      recorder.release();
+			recorder.release();
 		}
 		recorder = new MediaRecorder();
 		recorder.setAudioSource(AudioSource.MIC);
@@ -365,10 +373,64 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			recordButton.setWaiting(false);
 			startRecordingTime = new Date();
 		} catch (IOException e) {
-            e.printStackTrace();
-        }
+			e.printStackTrace();
+		}
 	}
-	
+
+	// completely arbitrary, especially when we're only asking for one dangerous permission.
+	// I just thought it might be useful to have a fairly distinctive number, for debugging.
+	private final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 17;
+
+	// Although the app declares that it needs permission to record audio, because it is considered
+	// a dangerous permission the user must grant it explicitly through this procedure from API23 on.
+	// In theory, the user could revoke it at any time, so we check it every time we need it. This
+	// also means that the request comes up the first time the user clicks the Record button (unless
+	// it was granted at application startup), and every subsequent time until it is granted.
+	// There doesn't seem to be much alternative.
+	private boolean requestRecordAudioPermission() {
+		if (ContextCompat.checkSelfPermission(this,
+				Manifest.permission.RECORD_AUDIO)
+				!= PackageManager.PERMISSION_GRANTED) {
+
+			// Permission has not yet been granted, so ask for it.
+			// Should we show an explanation? I don't think it's worth trying to explain why
+			// HTA needs this permission; it's too obvious. If we decide to, see similar code in
+			// MainActivity.
+			ActivityCompat.requestPermissions(this,
+					new String[]{Manifest.permission.RECORD_AUDIO},
+					MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+			// For now, we can't record. Asynchronously, we'll get the result of the request,
+			// and if permission is granted, the next time the user tries to record all will be well.
+			return false;
+		} else {
+			// Permission has already been granted
+			return true;
+		}
+	}
+
+	@Override
+	public void onRequestPermissionsResult(
+			int requestCode,
+			String permissions[],
+			int[] grantResults) {
+		switch (requestCode) {
+			case MY_PERMISSIONS_REQUEST_RECORD_AUDIO:
+				if (grantResults.length > 0) {
+					// We seem to get spurious callbacks with no results at all, before the user
+					// even responds. This might be because multiple events on the record button
+					// result in multiple requests. So just ignore any callback with no results.
+					if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+						// The user denied permission to record audio. We can't do much useful.
+						// This toast just might help.
+						Toast.makeText(this, R.string.no_use_without_record, Toast.LENGTH_LONG).show();
+					}
+				}
+		}
+	}
+
+
+
+
 	void stopRecording() {
 		Date beginStop = new Date();
 		while (starting) {
