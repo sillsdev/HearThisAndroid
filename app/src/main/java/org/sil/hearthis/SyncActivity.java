@@ -1,15 +1,27 @@
 package org.sil.hearthis;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
@@ -26,13 +38,19 @@ import java.util.Enumeration;
 
 public class SyncActivity extends AppCompatActivity implements AcceptNotificationHandler.NotificationListener,
         AcceptFileHandler.IFileReceivedNotification,
-    RequestFileHandler.IFileSentNotification {
+        RequestFileHandler.IFileSentNotification {
 
     Button scanBtn;
     Button continueButton;
     TextView ipView;
+    SurfaceView preview;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
+    private static final int REQUEST_CAMERA_PERMISSION = 201;
+    boolean scanning = false;
     TextView progressView;
+
+    private BarcodeDetector barcodeDetector;
+    private CameraSource cameraSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +58,10 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         setContentView(R.layout.activity_sync);
         getSupportActionBar().setTitle(R.string.sync_title);
         startSyncServer();
-        progressView = (TextView)findViewById(R.id.progress);
-        continueButton = (Button)findViewById(R.id.continue_button);
+        progressView = (TextView) findViewById(R.id.progress);
+        continueButton = (Button) findViewById(R.id.continue_button);
+        preview = (SurfaceView) findViewById(R.id.surface_view);
+        preview.setVisibility(View.INVISIBLE);
         continueButton.setEnabled(false);
         final SyncActivity thisActivity = this;
         continueButton.setOnClickListener(new View.OnClickListener() {
@@ -64,29 +84,116 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         RequestFileHandler.requestFileSentNotification((this));
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (cameraSource != null) {
+            cameraSource.release();
+            cameraSource = null;
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_sync, menu);
-        ipView = (TextView)findViewById(R.id.ip_address);
-        scanBtn = (Button)findViewById(R.id.scan_button);
+        ipView = (TextView) findViewById(R.id.ip_address);
+        scanBtn = (Button) findViewById(R.id.scan_button);
         scanBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                IntentIntegrator integrator = new IntentIntegrator(SyncActivity.this);
-                integrator.addExtra("SCAN_MODE", "QR_CODE_MODE");
-                //customize the prompt message before scanning
-                integrator.addExtra("PROMPT_MESSAGE", "Scan the HearThis Desktop barcode");
-                // scan result comes to our onActivityResult method.
-                integrator.initiateScan();
+                // This approach is deprecated, but the new approach (using ML_Kit)
+                // requires us to increase MinSdk from 18 to 19 (4.4) and barcode scanning is
+                // not important enough for us to do that. This works fine on an app that targets
+                // SDK 33, at least while running on Android 12.
+                barcodeDetector = new BarcodeDetector.Builder(SyncActivity.this)
+                        .setBarcodeFormats(Barcode.QR_CODE)
+                        .build();
+                if (cameraSource != null)
+                {
+                    //cameraSource.stop();
+                    cameraSource.release();
+                    cameraSource = null;
+                }
+
+                cameraSource = new CameraSource.Builder(SyncActivity.this, barcodeDetector)
+                        .setRequestedPreviewSize(1920, 1080)
+                        .setAutoFocusEnabled(true)
+                        .build();
+
+                barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
+                    @Override
+                    public void release() {
+                        // Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void receiveDetections(Detector.Detections<Barcode> detections) {
+                        final SparseArray<Barcode> barcodes = detections.getDetectedItems();
+                        if (scanning && barcodes.size() != 0) {
+                            String contents = barcodes.valueAt(0).displayValue;
+                            if (contents != null) {
+                                scanning = false; // don't want to repeat this if it finds the image again
+                                runOnUiThread(new Runnable() {
+                                                  @Override
+                                                  public void run() {
+                                                      ipView.setText(contents);
+                                                      preview.setVisibility(View.INVISIBLE);
+                                                      SendMessage sendMessageTask = new SendMessage();
+                                                      sendMessageTask.ourIpAddress = getOurIpAddress();
+                                                      sendMessageTask.execute();
+                                                      cameraSource.stop();
+                                                      cameraSource.release();
+                                                      cameraSource = null;
+                                                  }
+                                              });
+
+                            }
+                        }
+                    }
+                });
+
+                if (ActivityCompat.checkSelfPermission(SyncActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        scanning = true;
+                        preview.setVisibility(View.VISIBLE);
+                        cameraSource.start(preview.getHolder());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    ActivityCompat.requestPermissions(SyncActivity.this, new
+                            String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+                }
             }
         });
         String ourIpAddress = getOurIpAddress();
-        TextView ourIpView = (TextView)findViewById(R.id.our_ip_address);
+        TextView ourIpView = (TextView) findViewById(R.id.our_ip_address);
         ourIpView.setText(ourIpAddress);
         AcceptNotificationHandler.addNotificationListener(this);
         return true;
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            String permissions[],
+            int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_CAMERA_PERMISSION:
+                if (grantResults.length > 0) {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            scanning = true;
+                            preview.setVisibility(View.VISIBLE);
+                            cameraSource.start(preview.getHolder());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+        }
     }
 
     // Get the IP address of this device (on the WiFi network) to transmit to the desktop.
@@ -115,23 +222,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         }
 
         return ip;
-    }
-
-    // Receiver the result of a successful QR scan, assumed to be the one from the desktop.
-    // Enhance: do something (add a magic number?) so we can tell if they somehow scanned
-    // the wrong QR code.
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-        if (result != null) {
-            String contents = result.getContents();
-            if (contents != null) {
-                ipView.setText(contents);
-                SendMessage sendMessageTask = new SendMessage();
-                sendMessageTask.ourIpAddress = getOurIpAddress();
-                sendMessageTask.execute();
-            }
-        }
     }
 
     @Override
