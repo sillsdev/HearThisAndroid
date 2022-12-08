@@ -76,6 +76,11 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
 		getSupportActionBar().setTitle(R.string.record_title);
+		// Usually not necessary, since we don't start up in this activity. But if the user turns
+		// off our permission to record and then resumes the app (something probably only a tester
+		// would do, but still...) the system apparently re-creates the activity without going
+		// through the normal startup steps. And we NEED this to be called.
+		ServiceLocator.getServiceLocator().init(this);
 
 		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
 
@@ -379,7 +384,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	// completely arbitrary, especially when we're only asking for one dangerous permission.
 	// I just thought it might be useful to have a fairly distinctive number, for debugging.
-	private final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 17;
+	private final int RECORD_ACTIVITY_RECORD_PERMISSION = 37;
 
 	// Although the app declares that it needs permission to record audio, because it is considered
 	// a dangerous permission the user must grant it explicitly through this procedure from API23 on.
@@ -398,7 +403,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			// MainActivity.
 			ActivityCompat.requestPermissions(this,
 					new String[]{Manifest.permission.RECORD_AUDIO},
-					MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+					RECORD_ACTIVITY_RECORD_PERMISSION);
 			// For now, we can't record. Asynchronously, we'll get the result of the request,
 			// and if permission is granted, the next time the user tries to record all will be well.
 			return false;
@@ -414,7 +419,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			String permissions[],
 			int[] grantResults) {
 		switch (requestCode) {
-			case MY_PERMISSIONS_REQUEST_RECORD_AUDIO:
+			case RECORD_ACTIVITY_RECORD_PERMISSION:
 				if (grantResults.length > 0) {
 					// We seem to get spurious callbacks with no results at all, before the user
 					// even responds. This might be because multiple events on the record button

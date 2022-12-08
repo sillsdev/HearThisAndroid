@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
 						new String[]{Manifest.permission.RECORD_AUDIO},
 						MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
 
-				// MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+				// MY_PERMISSIONS_REQUEST_RECORD_AUDIO is an
 				// app-defined int constant. The callback method gets the
 				// result of the request.
 			}
@@ -114,8 +114,9 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	// This doesn't really do anything useful at present; just keeping it in case we want
-	// to do anything about receiving a grant/deny message.
+	// This get called by the system when the user has somehow responded to our request for
+	// permission to record audio. Once we have a response, we move to the appropriate activity,
+	// depending on whether the user has previously selected a project and passage.
 	@Override
 	public void onRequestPermissionsResult(
 			int requestCode,
@@ -144,11 +145,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (ContextCompat.checkSelfPermission(this,
-				Manifest.permission.RECORD_AUDIO)
-				== PackageManager.PERMISSION_GRANTED) {
-			launchChooseBookIfProject();
-		}
+		launchChooseBookIfProject();
 	}
 
 	private ArrayList<String> getProjectRootDirectories() {

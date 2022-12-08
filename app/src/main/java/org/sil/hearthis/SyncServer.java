@@ -20,7 +20,13 @@ import java.net.Socket;
 
 /**
  * SyncServer manages the 'web server' for the synchronization service that supports data
- * exchange with HearThis desktop
+ * exchange with HearThis desktop.
+ * This is using classes like BasicHttpProcessor from org.apache.http with is considered obsolete.
+ * However, there is no obvious replacement I can find for it in connection with making a
+ * web server. For now, I've been able to keep it working at least as far as Android 12
+ * by adding "useLibrary 'org.apache.http.legacy'" to build.gradle and (later) a uses-library
+ * declaration to AndroidManifext.xml. The editor seems to think this file will not compile, even so,
+ * but somehow it actually does.
  */
 public class SyncServer extends Thread {
     SyncService _parent;

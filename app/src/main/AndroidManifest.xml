@@ -55,6 +55,9 @@
             android:name=".ChooseBookActivity"
             android:label="@string/title_activity_choose_book"></activity>
         <activity android:name=".ChooseProjectActivity"></activity>
+
+        <!-- Yet another hack to allow us to go on using the obsolete BasicHttpProcessor in SyncServer -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
     </application>
 
 </manifest>
