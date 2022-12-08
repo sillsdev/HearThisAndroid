@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	// This get called by the system when the user has somehow responded to our request for
+	// This gets called by the system when the user has somehow responded to our request for
 	// permission to record audio. Once we have a response, we move to the appropriate activity,
 	// depending on whether the user has previously selected a project and passage.
 	@Override

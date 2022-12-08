@@ -137,6 +137,14 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                 runOnUiThread(new Runnable() {
                                                   @Override
                                                   public void run() {
+                                                      // Enhance: do something (add a magic number or label?) so we can tell if they somehow scanned
+                                                      // some other QR code. We've reduced the chances by telling the BarCodeDetector to
+                                                      // only look for QR codes, but conceivably the user could find something else.
+                                                      // It's only used for one thing: we will try to use it as an IP address and send
+                                                      // a simple DataGram to it containing our own IP address. So if it's no good,
+                                                      // there'll probably be an exception, and it will be ignored, and nothing will happen
+                                                      // except that whatever text the QR code represents shows on the screen, which might
+                                                      // provide some users a clue that all is not well.
                                                       ipView.setText(contents);
                                                       preview.setVisibility(View.INVISIBLE);
                                                       SendMessage sendMessageTask = new SendMessage();
