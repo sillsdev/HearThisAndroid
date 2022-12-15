@@ -26,5 +26,9 @@
     <string name="scale_pref_summary">Scale for recording text</string>
     <string name="hello_world">Hello world!</string>
     <string name="noProject">No projects found. Please choose a project in HearThis Desktop and synchronize it using the Sync button.</string>
-
+    <string name="no_use_without_record">This program cannot record sound unless you grant it permission to do so</string>
+    <string name="record_for_volume">HearThis would like to record audio to display your sound level so you can check it before recording</string>
+    <string name="need_permissions">Permission wanted</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>

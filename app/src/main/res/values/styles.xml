@@ -45,4 +45,5 @@
     <color name="buttonSuggestedBorderColor">#FCCA01</color>
     <color name="recordingColor">#39A500</color>
     <color name="audioButtonDisabledColor">#5F5F5F</color>
+    <color name="scanPreviewBackground">#DDDDDD</color>
 </resources>
