@@ -27,7 +27,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 public class RealScriptProvider implements IScriptProvider {
-	
+
 	String _path;
 	List<BookData> Books = new ArrayList<BookData>();
     public static String infoFileName = "info.xml";
@@ -52,7 +52,9 @@ public class RealScriptProvider implements IScriptProvider {
         }
 		String[] getLines() {
 			if (lineCount == 0 || lineCount == lines.length) // none, or already loaded.
-				return lines;
+            {
+                return lines;
+            }
             if (getFileSystem().FileExists(getChapInfoFile()))
             {
                 lines = new String[lineCount];
@@ -325,7 +327,7 @@ public class RealScriptProvider implements IScriptProvider {
 			return new ScriptLine("");
 		return new ScriptLine(chapter.getLines()[lineNumber0Based]);
 	}
-	
+
 	ChapterData GetChapter(int bookNumber, int chapter1Based) {
 		BookData book = Books.get(bookNumber);
 		if (chapter1Based >= book.chapters.size())
@@ -370,7 +372,7 @@ public class RealScriptProvider implements IScriptProvider {
 	@Override
 	public void LoadBook(int bookNumber0Based) {
 		// nothing to do here in this version.
-		
+
 	}
 
 	@Override
