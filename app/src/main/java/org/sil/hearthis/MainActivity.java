@@ -27,7 +27,6 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//Graphite.loadGraphite();
 		setContentView(R.layout.activity_main);
 		ServiceLocator.getServiceLocator().init(this);
 		Button sync = (Button) findViewById(R.id.mainSyncButton);

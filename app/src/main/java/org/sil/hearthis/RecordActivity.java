@@ -82,8 +82,6 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		// through the normal startup steps. And we NEED this to be called.
 		ServiceLocator.getServiceLocator().init(this);
 
-		//mtfl = (Typeface)Graphite.addFontResource(getAssets(), "CharisSILAfr-R.ttf", "charis", 0, "", "");
-
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
 		BookInfo book = (BookInfo) extras.get("bookInfo");
