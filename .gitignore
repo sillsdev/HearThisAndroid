@@ -50,6 +50,7 @@ gradle/*
 !gradle/wrapper
 gradle/wrapper/*
 !gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.jar
 /*/local.properties
 /*/out
 /*/*/build
