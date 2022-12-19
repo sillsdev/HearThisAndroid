@@ -2,13 +2,14 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.Button;
+
+import androidx.appcompat.widget.AppCompatButton;
 
 /**
  * Created by Thomson on 3/5/2016.
  * Parent class for audio control buttons.
  */
-public class CustomButton extends Button {
+public class CustomButton extends AppCompatButton {
     public CustomButton(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
