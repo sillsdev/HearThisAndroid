@@ -46,7 +46,10 @@ local.properties
 # Android Studio
 .idea/
 .gradle
-gradle
+gradle/*
+!gradle/wrapper
+gradle/wrapper/*
+!gradle/wrapper/gradle-wrapper.properties
 /*/local.properties
 /*/out
 /*/*/build
