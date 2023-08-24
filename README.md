@@ -3,8 +3,6 @@ HearThisAndroid
 
 Simple Scripture recording on Android Devices
 
-This project is so far a personal one, though likely to become an official SIL one soon, so I have made the main repo under SilLsdev.
-
 Synchronizes (over local WiFi) with HearThis for Windows. Can display, record and play back Scripture.
 
 #Building
