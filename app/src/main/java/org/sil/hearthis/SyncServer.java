@@ -1,5 +1,6 @@
 package org.sil.hearthis;
 
+import android.util.Log;
 import org.apache.http.HttpException;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -69,6 +70,7 @@ public class SyncServer extends Thread {
             return; // already started, must not do twice.
         _running = true;
 
+        Log.d("Sync", "SyncServer, calling super.start()");
         super.start();
     }
 
@@ -80,6 +82,7 @@ public class SyncServer extends Thread {
     // Method executed in thread when super.start() is called.
     @Override
     public void run() {
+        Log.d("Sync", "SyncServer, calling super.run()");
         super.run();
 
         try {
@@ -95,8 +98,10 @@ public class SyncServer extends Thread {
 
                     serverConnection.bind(socket, new BasicHttpParams());
 
+                    //Log.d("Sync", "SyncServer.run, handling request");
                     httpService.handleRequest(serverConnection, httpContext);
 
+                    //Log.d("Sync", "SyncServer.run, shutting down");
                     serverConnection.shutdown();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -105,6 +110,7 @@ public class SyncServer extends Thread {
                 }
             }
 
+            Log.d("Sync", "SyncServer.run, closing serverSocket");
             serverSocket.close();
         }
         catch (IOException e) {
