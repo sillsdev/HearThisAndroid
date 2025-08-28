@@ -2,7 +2,6 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -30,10 +29,8 @@ public class RequestFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
-        if (listener!= null) {
-            Log.d("Sync", "RequestFileHandler, listener.sendingFile() for " + filePath);
+        if (listener!= null)
             listener.sendingFile(filePath);
-        }
         String path = baseDir  + "/" + filePath;
         File file = new File(path);
         if (!file.exists()) {
@@ -53,7 +50,6 @@ public class RequestFileHandler implements HttpRequestHandler {
 
     static IFileSentNotification listener;
     public static void requestFileSentNotification(IFileSentNotification newListener) {
-        Log.d("Sync", "RequestFileHandler, instantiating listener");
         listener = newListener; // We only support notifying the most recent for now.
     }
 }

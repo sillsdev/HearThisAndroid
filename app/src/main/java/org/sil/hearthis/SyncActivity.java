@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-//import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,7 +11,6 @@ import androidx.core.app.ActivityCompat;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -60,7 +58,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
         getSupportActionBar().setTitle(R.string.sync_title);
-        Log.d("Sync", "onCreate, calling startSyncServer()");
         startSyncServer();
         progressView = (TextView) findViewById(R.id.progress);
         continueButton = (Button) findViewById(R.id.continue_button);
@@ -79,15 +76,12 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     private void startSyncServer() {
         Intent serviceIntent = new Intent(this, SyncService.class);
         startService(serviceIntent);
-        Log.d("Sync", "startSyncServer, started service");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d("Sync", "onResume, calling AcceptFileHandler.requestFileReceivedNotification()");
         AcceptFileHandler.requestFileReceivedNotification(this);
-        Log.d("Sync", "onResume, calling RequestFileHandler.requestFileSentNotification()");
         RequestFileHandler.requestFileSentNotification((this));
     }
 
@@ -134,7 +128,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                         // Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_SHORT).show();
                     }
 
-                    // Replacing 'AsyncTask' with 'Executors' and 'Handlers' in this method is based on:
+                    // Replacing 'AsyncTask' (deprecated) with 'Executors' and 'Handlers' in this method is inspired by:
                     // https://stackoverflow.com/questions/58767733/the-asynctask-api-is-deprecated-in-android-11-what-are-the-alternatives
                     @Override
                     public void receiveDetections(Detector.Detections<Barcode> detections) {
@@ -156,18 +150,13 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                       // provide some users a clue that all is not well.
                                                       ipView.setText(contents);
                                                       preview.setVisibility(View.INVISIBLE);
-                                                      //SendMessage sendMessageTask = new SendMessage();
-                                                      //sendMessageTask.ourIpAddress = getOurIpAddress();
-                                                      //sendMessageTask.execute();
                                                       ExecutorService executor = Executors.newSingleThreadExecutor();
                                                       Handler handler = new Handler(Looper.getMainLooper());
                                                       executor.execute(() -> {
                                                           // Background work: send UDP packet to IP address given in the QR code.
                                                           try {
                                                               String ourIpAddress = getOurIpAddress();
-                                                              Log.d("Sync", "local IP address = " + ourIpAddress);
                                                               String ipAddress = ipView.getText().toString();
-                                                              Log.d("Sync", "remote IP address = " + ipAddress);
                                                               InetAddress receiverAddress = InetAddress.getByName(ipAddress);
                                                               DatagramSocket socket = new DatagramSocket();
                                                               byte[] ipBytes = ourIpAddress.getBytes("UTF-8");
@@ -179,7 +168,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                               e.printStackTrace();
                                                           }
                                                           handler.post(() -> {
-                                                              // Background work done, no foreground/UI work needed.
+                                                              // Background work done, no associated foreground work needed.
                                                           });
                                                       });
                                                       cameraSource.stop();
@@ -277,29 +266,29 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void onNotification(String message) {
-        Log.d("Sync", "onNotification, called with " + message);
         AcceptNotificationHandler.removeNotificationListener(this);
-        //setProgress(getString(R.string.sync_success));
+
+        // HT-508: HearThis PC now includes sync status in its notification to the app.
+        // Possible sync statuses recognized:
+        //   - success
+        //   - interrupted; handling this should prevent the app from getting into a bad state.
         if (message.equals("sync_success")) {
-            Log.d("Sync", "onNotification, calling setProgress(sync_success)");
             setProgress(getString(R.string.sync_success));
         } else if (message.equals("sync_interrupted")) {
-            Log.d("Sync", "onNotification, calling setProgress(sync_interrupted)");
             setProgress(getString(R.string.sync_interrupted));
         } else {
-            Log.d("Sync", "onNotification, illegal message: " + message);
+            // Should never happen. Not sure what to do here, if anything...
+            //Log.d("Sync", "onNotification, illegal message: " + message);
         }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 continueButton.setEnabled(true);
-                Log.d("Sync", "onNotification, continue button enabled");
             }
         });
     }
 
     void setProgress(final String text) {
-        Log.d("Sync", "setProgress, called with " + text);
         runOnUiThread(new Runnable() {
             public void run() {
                 progressView.setText(text);
@@ -318,7 +307,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             return;
         lastProgress = new Date();
         setProgress("receiving " + name);
-        Log.d("Sync", "receivingFile, name = " + name);
     }
 
     @Override
@@ -327,29 +315,5 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             return;
         lastProgress = new Date();
         setProgress("sending " + name);
-        Log.d("Sync", "sendingFile, name = " + name);
     }
-
-    // This class is responsible to send one message packet to the IP address we
-    // obtained from the desktop, containing the Android's own IP address.
-    //private class SendMessage extends AsyncTask<Void, Void, Void> {
-    //
-    //    public String ourIpAddress;
-    //    @Override
-    //    protected Void doInBackground(Void... params) {
-    //        try {
-    //            String ipAddress = ipView.getText().toString();
-    //            InetAddress receiverAddress = InetAddress.getByName(ipAddress);
-    //            DatagramSocket socket = new DatagramSocket();
-    //            byte[] buffer = ourIpAddress.getBytes("UTF-8");
-    //            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, receiverAddress, desktopPort);
-    //            socket.send(packet);
-    //        } catch (UnknownHostException e) {
-    //            e.printStackTrace();
-    //        } catch (IOException e) {
-    //            e.printStackTrace();
-    //        }
-    //        return null;
-    //    }
-    //}
 }

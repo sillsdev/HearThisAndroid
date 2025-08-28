@@ -2,7 +2,6 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -33,10 +32,8 @@ public class AcceptFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
-        if (listener != null) {
-            Log.d("Sync", "AcceptFileHandler, listener.receivingFile() for " + filePath);
+        if (listener != null)
             listener.receivingFile(filePath);
-        }
         String path = baseDir  + "/" + filePath;
         HttpEntity entity = null;
         String result = "failure";
@@ -66,7 +63,6 @@ public class AcceptFileHandler implements HttpRequestHandler {
 
     static IFileReceivedNotification listener;
     public static void requestFileReceivedNotification(IFileReceivedNotification newListener) {
-        Log.d("Sync", "AcceptFileHandler, instantiating listener");
         listener = newListener; // We only support notifying the most recent for now.
     }
 }
