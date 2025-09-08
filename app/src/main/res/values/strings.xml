@@ -18,6 +18,7 @@
     <string name="title_activity_choose_book">ChooseBookActivity</string>
     <string name="sync_success">Sync completed successfully!</string>
     <string name="sync_interrupted">Sync was interrupted or cancelled</string>
+    <string name="sync_suspect">Sync status unknown. Please ensure that HearThis and HearThisAndroid versions are compatible.</string>
     <string name="choose_project">Choose a project</string>
     <string name="choose_book">Choose a book</string>
     <string name="choose_chapter">Choose a chapter</string>

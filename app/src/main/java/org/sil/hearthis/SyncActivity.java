@@ -277,8 +277,8 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         } else if (message.equals("sync_interrupted")) {
             setProgress(getString(R.string.sync_interrupted));
         } else {
-            // Should never happen. Not sure what to do here, if anything...
-            //Log.d("Sync", "onNotification, illegal message: " + message);
+            // Should not happen. Likely caused by incompatible versions of HT/HTA. Warn the user.
+            setProgress(getString(R.string.sync_suspect));
         }
         runOnUiThread(new Runnable() {
             @Override
