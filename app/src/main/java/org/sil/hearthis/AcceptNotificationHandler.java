@@ -7,6 +7,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 
 /**
@@ -42,10 +43,26 @@ public class AcceptNotificationHandler implements HttpRequestHandler {
         // NOTE: like several things in HearThisAndroid, HttpRequest is deprecated. It will be
         // replaced with something more appropriate, hopefully soon.
 
-        String s1 = request.getRequestLine().toString();
-        // We want the part between the two space chars, and after the '='
-        String s2 = s1.substring(s1.indexOf(' ') + 1, s1.lastIndexOf(' '));
-        String status = s2.substring(s2.indexOf('=') + 1);
+        String status = null;
+        try {
+            String s1 = request.getRequestLine().getUri();
+            URI uri = new URI(s1);
+            String query = uri.getQuery();
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=");
+                if (pair.length == 2 && pair[0].equals("message")) {
+                    status = pair[1];
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (status == null) {
+            // Something went wrong. Make sure the user sees a non-success message.
+            status = "sync_interrupted";
+        }
 
         for (NotificationListener listener: notificationListeners.toArray(new NotificationListener[notificationListeners.size()])) {
             listener.onNotification(status);
