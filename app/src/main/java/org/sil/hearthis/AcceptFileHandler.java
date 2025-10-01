@@ -2,6 +2,7 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -32,8 +33,10 @@ public class AcceptFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
-        if (listener != null)
+        if (listener != null) {
+            Log.d("Sync", "AcceptFileHandler, calling listener.receivingFile(" + filePath + ")");
             listener.receivingFile(filePath);
+        }
         String path = baseDir  + "/" + filePath;
         HttpEntity entity = null;
         String result = "failure";

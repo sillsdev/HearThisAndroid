@@ -1,5 +1,8 @@
 package org.sil.hearthis;
 
+import static org.sil.hearthis.AcceptNotificationHandler.notificationListeners;
+//import org.sil.hearthis.Watchdog;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -11,6 +14,7 @@ import androidx.core.app.ActivityCompat;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,17 +28,20 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+//import org.apache.http.entity.StringEntity;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+//import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class SyncActivity extends AppCompatActivity implements AcceptNotificationHandler.NotificationListener,
@@ -47,8 +54,14 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     SurfaceView preview;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
     private static final int REQUEST_CAMERA_PERMISSION = 201;
+    private static final int WATCHDOG_TIMEOUT_SECONDS = 10;
     boolean scanning = false;
     TextView progressView;
+
+    Watchdog watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
+        Log.d("Sync", "Watchdog, TIMED OUT, setting Error");
+        setProgress(getString(R.string.sync_error));
+    });
 
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
@@ -156,16 +169,22 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                           // Background work: send UDP packet to IP address given in the QR code.
                                                           try {
                                                               String ourIpAddress = getOurIpAddress();
+                                                              Log.d("Sync", "SyncActivity.run, ourIpAddress = " + ourIpAddress); // WM, TEMPORARY
                                                               String ipAddress = ipView.getText().toString();
                                                               InetAddress receiverAddress = InetAddress.getByName(ipAddress);
                                                               DatagramSocket socket = new DatagramSocket();
                                                               byte[] ipBytes = ourIpAddress.getBytes("UTF-8");
                                                               DatagramPacket packet = new DatagramPacket(ipBytes, ipBytes.length, receiverAddress, desktopPort);
-                                                              socket.send(packet);
-                                                          } catch (UnknownHostException e) {
-                                                              e.printStackTrace();
-                                                          } catch (IOException e) {
-                                                              e.printStackTrace();
+                                                              Log.d("Sync", "SyncActivity.run, sending UDP packet"); // WM, TEMPORARY
+                                                              //throw new IOException("TEST HACK"); // WM, test only!
+                                                              socket.send(packet); // WM, comment out if preceding throw(), a hack, is present
+                                                          } catch (IOException ioe) {
+                                                              // Note: this also catches UnknownHostException, a subclass of IOException
+                                                              for (AcceptNotificationHandler.NotificationListener listener : notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
+                                                                  listener.onNotification("sync_interrupted");
+                                                              }
+                                                              Log.d("Sync", "SyncActivity.run, got exception: " + ioe);
+                                                              ioe.printStackTrace();
                                                           }
                                                           handler.post(() -> {
                                                               // Background work done, no associated foreground work needed.
@@ -198,6 +217,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         String ourIpAddress = getOurIpAddress();
         TextView ourIpView = (TextView) findViewById(R.id.our_ip_address);
         ourIpView.setText(ourIpAddress);
+        Log.d("Sync", "onCreateOptionsMenu, calling addNotificationListener()"); // WM, TEMPORARY
         AcceptNotificationHandler.addNotificationListener(this);
         return true;
     }
@@ -266,19 +286,49 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void onNotification(String message) {
+        Log.d("Sync", "onNotification(" + message + "), calling removeNotificationListener()"); // WM, TEMPORARY
         AcceptNotificationHandler.removeNotificationListener(this);
 
         // HT-508: HearThis PC now includes sync status in its notification to the app.
-        // Possible sync statuses recognized:
-        //   - success
-        //   - interrupted; handling this should prevent the app from getting into a bad state.
-        if (message.equals("sync_success")) {
-            setProgress(getString(R.string.sync_success));
-        } else if (message.equals("sync_interrupted")) {
-            setProgress(getString(R.string.sync_interrupted));
-        } else {
-            // Should not happen. Likely caused by incompatible versions of HT/HTA. Warn the user.
-            setProgress(getString(R.string.sync_suspect));
+        // Handling status here in HearThisAndroid should prevent the app from getting
+        // into a bad state, besides informing the user about whether sync succeeded.
+        switch (message) {
+            case "sync_success":
+                Log.d("Sync", "onNotification.success, shut down watchdog"); // WM, temporary
+                //watchdog.pet();
+                watchdog.shutdown();
+                setProgress(getString(R.string.sync_success));
+                Log.d("Sync", "onNotification, sync_success"); // WM, TEMPORARY
+                break;
+            case "sync_interrupted":
+                Log.d("Sync", "onNotification.interrupted, shut down watchdog"); // WM, temporary
+                //watchdog.pet();
+                watchdog.shutdown();
+                // Sync was interrupted or cancelled.
+                setProgress(getString(R.string.sync_interrupted));
+                Log.d("Sync", "onNotification, sync_interrupted"); // WM, TEMPORARY
+                break;
+            case "sync_error":
+                // Internal HTA error or incompatible versions of HT and HTA.
+                Log.d("Sync", "onNotification.error, shut down watchdog"); // WM, temporary
+                //watchdog.pet();
+                watchdog.shutdown();
+                setProgress(getString(R.string.sync_error));
+                Log.d("Sync", "onNotification, sync_error"); // WM, TEMPORARY
+                break;
+            //case "sync_unknown":
+            //    // Likely caused by incompatible versions of HT and HTA.
+            //    setProgress(getString(R.string.sync_unknown));
+            //    Log.d("Sync", "onNotification, sync_unknown"); // WM, TEMPORARY
+            //    break;
+            default:
+                // Should never happen. Raise an error.
+                Log.d("Sync", "onNotification.default, shut down watchdog"); // WM, temporary
+                //watchdog.pet();
+                watchdog.shutdown();
+                setProgress(getString(R.string.sync_error));
+                Log.d("Sync", "onNotification, bad status: " + message);
+                break;
         }
         runOnUiThread(new Runnable() {
             @Override
@@ -301,19 +351,27 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void receivingFile(final String name) {
+        Log.d("Sync", "receivingFile, pet watchdog"); // WM, temporary
+        watchdog.pet();
+
         // To prevent excess flicker and wasting compute time on progress reports,
         // only change once per second.
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
         setProgress("receiving " + name);
+        Log.d("Sync", "receivingFile: " + name);
     }
 
     @Override
     public void sendingFile(final String name) {
+        Log.d("Sync", "sendingFile, pet watchdog"); // WM, temporary
+        watchdog.pet();
+
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
         setProgress("sending " + name);
+        Log.d("Sync", "sendingFile: " + name);
     }
 }

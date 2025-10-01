@@ -2,6 +2,7 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -29,8 +30,10 @@ public class RequestFileHandler implements HttpRequestHandler {
         File baseDir = _parent.getExternalFilesDir(null);
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
-        if (listener!= null)
+        if (listener!= null) {
+            Log.d("Sync", "RequestFileHandler, calling listener.sendingFile(" + filePath + ")");
             listener.sendingFile(filePath);
+        }
         String path = baseDir  + "/" + filePath;
         File file = new File(path);
         if (!file.exists()) {
