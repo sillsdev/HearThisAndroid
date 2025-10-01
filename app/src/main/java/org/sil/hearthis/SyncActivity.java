@@ -298,7 +298,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                 //watchdog.pet();
                 watchdog.shutdown();
                 setProgress(getString(R.string.sync_success));
-                Log.d("Sync", "onNotification, sync_success"); // WM, TEMPORARY
                 break;
             case "sync_interrupted":
                 Log.d("Sync", "onNotification.interrupted, shut down watchdog"); // WM, temporary
@@ -306,7 +305,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                 watchdog.shutdown();
                 // Sync was interrupted or cancelled.
                 setProgress(getString(R.string.sync_interrupted));
-                Log.d("Sync", "onNotification, sync_interrupted"); // WM, TEMPORARY
                 break;
             case "sync_error":
                 // Internal HTA error or incompatible versions of HT and HTA.
@@ -314,7 +312,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                 //watchdog.pet();
                 watchdog.shutdown();
                 setProgress(getString(R.string.sync_error));
-                Log.d("Sync", "onNotification, sync_error"); // WM, TEMPORARY
                 break;
             //case "sync_unknown":
             //    // Likely caused by incompatible versions of HT and HTA.
@@ -327,7 +324,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                 //watchdog.pet();
                 watchdog.shutdown();
                 setProgress(getString(R.string.sync_error));
-                Log.d("Sync", "onNotification, bad status: " + message);
+                Log.d("Sync", "onNotification.default, bad status: " + message);
                 break;
         }
         runOnUiThread(new Runnable() {
@@ -351,7 +348,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void receivingFile(final String name) {
-        Log.d("Sync", "receivingFile, pet watchdog"); // WM, temporary
+        Log.d("Sync", "   receivingFile, pet watchdog"); // WM, temporary
         watchdog.pet();
 
         // To prevent excess flicker and wasting compute time on progress reports,
@@ -360,18 +357,18 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             return;
         lastProgress = new Date();
         setProgress("receiving " + name);
-        Log.d("Sync", "receivingFile: " + name);
+        Log.d("Sync", "receivingFile: " + name); // WM, temporary
     }
 
     @Override
     public void sendingFile(final String name) {
-        Log.d("Sync", "sendingFile, pet watchdog"); // WM, temporary
+        Log.d("Sync", "   sendingFile, pet watchdog"); // WM, temporary
         watchdog.pet();
 
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
         setProgress("sending " + name);
-        Log.d("Sync", "sendingFile: " + name);
+        Log.d("Sync", "sendingFile: " + name); // WM, temporary
     }
 }

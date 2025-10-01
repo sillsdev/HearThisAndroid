@@ -34,8 +34,8 @@ public class Watchdog {
     private final TimeUnit unit;
 
     public Watchdog(long timeout, TimeUnit unit, Runnable onTimeout) {
-        Log.d("Sync", "Watchdog, constructor begin, timeout   = " + timeout); // WM, temporary
-        Log.d("Sync", "                             unit      = " + unit); // WM, temporary
+        Log.d("Sync", "Watchdog, constructor begin, timeout = " + timeout); // WM, temporary
+        Log.d("Sync", "                             unit    = " + unit); // WM, temporary
         this.timeout = timeout;
         this.unit = unit;
         this.onTimeout = onTimeout;
