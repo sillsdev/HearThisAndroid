@@ -1,7 +1,6 @@
 package org.sil.hearthis;
 
 import static org.sil.hearthis.AcceptNotificationHandler.notificationListeners;
-//import org.sil.hearthis.Watchdog;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -57,14 +56,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     private static final int WATCHDOG_TIMEOUT_SECONDS = 10;
     boolean scanning = false;
     TextView progressView;
-
-    Watchdog watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
-        Log.d("Sync", "Watchdog, TIMED OUT, setting Error");
-        setProgress(getString(R.string.sync_error));
-    });
-
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
+    private Watchdog watchdog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +172,14 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                               Log.d("Sync", "SyncActivity.run, sending UDP packet"); // WM, TEMPORARY
                                                               //throw new IOException("TEST HACK"); // WM, test only!
                                                               socket.send(packet); // WM, comment out if preceding throw(), a hack, is present
+
+                                                              // Don't create and start the watchdog until we KNOW that we are doing a sync.
+                                                              // At this point we have responded to the PC's sync offer and are indeed committed.
+                                                              watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
+                                                                  Log.d("Sync", "Watchdog, TIMED OUT, setting Error");
+                                                                  setProgress(getString(R.string.sync_error));
+                                                              });
+                                                              Log.d("Sync", "SyncActivity.run, watchdog started, timeout = " + WATCHDOG_TIMEOUT_SECONDS + " secs");
                                                           } catch (IOException ioe) {
                                                               // Note: this also catches UnknownHostException, a subclass of IOException
                                                               for (AcceptNotificationHandler.NotificationListener listener : notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
@@ -289,40 +291,29 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         Log.d("Sync", "onNotification(" + message + "), calling removeNotificationListener()"); // WM, TEMPORARY
         AcceptNotificationHandler.removeNotificationListener(this);
 
+        // The watchdog timer prevents the Android app from getting stuck if the PC side
+        // is unable to complete a sync operation. Getting here means we got a notification
+        // from the PC. It should contain the final sync status, but even if it doesn't, the
+        // sync operation *is* complete and the watchdog should be turned off.
+        Log.d("Sync", "onNotification, got " + message + ", shutting down watchdog"); // WM, temporary
+        watchdog.shutdown();
+
         // HT-508: HearThis PC now includes sync status in its notification to the app.
-        // Handling status here in HearThisAndroid should prevent the app from getting
-        // into a bad state, besides informing the user about whether sync succeeded.
+        // We can now inform the user about whether sync succeeded.
         switch (message) {
             case "sync_success":
-                Log.d("Sync", "onNotification.success, shut down watchdog"); // WM, temporary
-                //watchdog.pet();
-                watchdog.shutdown();
                 setProgress(getString(R.string.sync_success));
                 break;
             case "sync_interrupted":
-                Log.d("Sync", "onNotification.interrupted, shut down watchdog"); // WM, temporary
-                //watchdog.pet();
-                watchdog.shutdown();
                 // Sync was interrupted or cancelled.
                 setProgress(getString(R.string.sync_interrupted));
                 break;
             case "sync_error":
                 // Internal HTA error or incompatible versions of HT and HTA.
-                Log.d("Sync", "onNotification.error, shut down watchdog"); // WM, temporary
-                //watchdog.pet();
-                watchdog.shutdown();
                 setProgress(getString(R.string.sync_error));
                 break;
-            //case "sync_unknown":
-            //    // Likely caused by incompatible versions of HT and HTA.
-            //    setProgress(getString(R.string.sync_unknown));
-            //    Log.d("Sync", "onNotification, sync_unknown"); // WM, TEMPORARY
-            //    break;
             default:
-                // Should never happen. Raise an error.
-                Log.d("Sync", "onNotification.default, shut down watchdog"); // WM, temporary
-                //watchdog.pet();
-                watchdog.shutdown();
+                // Not a sync status; should never happen. Raise an error.
                 setProgress(getString(R.string.sync_error));
                 Log.d("Sync", "onNotification.default, bad status: " + message);
                 break;

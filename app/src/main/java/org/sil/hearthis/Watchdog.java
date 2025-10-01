@@ -1,29 +1,18 @@
 package org.sil.hearthis;
 
+import java.util.concurrent.*;
 import android.util.Log;
 
-//import org.apache.http.HttpException;
-//import org.apache.http.impl.DefaultConnectionReuseStrategy;
-//import org.apache.http.impl.DefaultHttpResponseFactory;
-//import org.apache.http.impl.DefaultHttpServerConnection;
-//import org.apache.http.params.BasicHttpParams;
-//import org.apache.http.protocol.BasicHttpContext;
-//import org.apache.http.protocol.BasicHttpProcessor;
-//import org.apache.http.protocol.HttpRequestHandlerRegistry;
-//import org.apache.http.protocol.HttpService;
-//import org.apache.http.protocol.ResponseConnControl;
-//import org.apache.http.protocol.ResponseContent;
-//import org.apache.http.protocol.ResponseDate;
-//import org.apache.http.protocol.ResponseServer;
-
-//import java.io.IOException;
-//import java.net.ServerSocket;
-//import java.net.Socket;
-import java.util.concurrent.*;
-
 /**
- * This class implements a timeout for the Android side of a HearThis sync operation.
+ * This class implements a "watchdog" timer for the Android side of a HearThis sync operation.
  *
+ * Once instantiated and started, it counts down from its timeout value (passed in). The timer
+ * is NOT supposed to get all the way down to 0. If it does, a problematic condition has arisen
+ * somewhere and the 'onTimeout' code runs in an effort to mitigate the problem.
+ * Calling pet() restarts a full countdown. The timeout value should be chosen such that it is
+ * longer than any normal interval between calls to pet(). Thus in a correctly working system,
+ * pet() keeps getting called well before the timer ever finishes counting down to 0 from its
+ * initial timeout value, and the 'onTimeout' code never runs.
  */
 
 public class Watchdog {
@@ -34,20 +23,22 @@ public class Watchdog {
     private final TimeUnit unit;
 
     public Watchdog(long timeout, TimeUnit unit, Runnable onTimeout) {
-        Log.d("Sync", "Watchdog, constructor begin, timeout = " + timeout); // WM, temporary
-        Log.d("Sync", "                             unit    = " + unit); // WM, temporary
+        //Log.d("Sync", "Watchdog, constructor, timeout = " + timeout); // WM, temporary
+        //Log.d("Sync", "                       unit    = " + unit); // WM, temporary
         this.timeout = timeout;
         this.unit = unit;
         this.onTimeout = onTimeout;
     }
 
-    // Call this whenever input is received
+    // Subsystems of interest call this method to restart the timer countdown. Basically this
+    // means: "At the moment all is well. We'll try to call again before your next deadline. If
+    // we don't, send for help."
     public synchronized void pet() {
         if (watchdogTask != null && !watchdogTask.isDone()) {
-            Log.d("Sync", "Watchdog, pet, setting cancel false"); // WM, temporary
+            Log.d("Sync", "Watchdog, pet, not null and not done"); // WM, temporary
             watchdogTask.cancel(false);
         }
-        Log.d("Sync", "Watchdog, pet, calling scheduler.schedule()"); // WM, temporary
+        //Log.d("Sync", "Watchdog, pet, calling scheduler.schedule()"); // WM, temporary
         watchdogTask = scheduler.schedule(onTimeout, timeout, unit);
     }
 
