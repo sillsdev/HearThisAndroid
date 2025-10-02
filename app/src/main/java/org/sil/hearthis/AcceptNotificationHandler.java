@@ -81,12 +81,8 @@ public class AcceptNotificationHandler implements HttpRequestHandler {
         }
 
         if (status == null) {
-            // Something went wrong. Make sure the user sees a non-success message.
-            //if (minHtaVersion != null) {
-            //    status = "sync_unknown";  // error also: we got something but it wasn't "status"
-            //} else {
-                status = "sync_error";
-            //}
+            // We got something but it wasn't "status". Make sure the user sees an error message.
+            status = "sync_error";
         }
 
         Log.d("Sync", "handle, final from HT, status = " + status); // WM, TEMPORARY

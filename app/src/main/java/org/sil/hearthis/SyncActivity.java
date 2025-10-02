@@ -175,8 +175,12 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
                                                               // Don't create and start the watchdog until we KNOW that we are doing a sync.
                                                               // At this point we have responded to the PC's sync offer and are indeed committed.
+                                                              // NOTE: inside the braces is the mitigation code, running only if timeout occurs.
                                                               watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
                                                                   Log.d("Sync", "Watchdog, TIMED OUT, setting Error");
+                                                                  for (AcceptNotificationHandler.NotificationListener listener: notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
+                                                                      listener.onNotification("sync_error");
+                                                                  }
                                                                   setProgress(getString(R.string.sync_error));
                                                               });
                                                               Log.d("Sync", "SyncActivity.run, watchdog started, timeout = " + WATCHDOG_TIMEOUT_SECONDS + " secs");
