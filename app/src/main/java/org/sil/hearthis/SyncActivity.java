@@ -53,7 +53,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     SurfaceView preview;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
     private static final int REQUEST_CAMERA_PERMISSION = 201;
-    private static final int WATCHDOG_TIMEOUT_SECONDS = 10;
+    private static final int WATCHDOG_TIMEOUT_SECONDS = 10;  // match the HearThis timeout?
     boolean scanning = false;
     TextView progressView;
     private BarcodeDetector barcodeDetector;
@@ -175,7 +175,8 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
                                                               // Don't create and start the watchdog until we KNOW that we are doing a sync.
                                                               // At this point we have responded to the PC's sync offer and are indeed committed.
-                                                              // NOTE: inside the braces is the mitigation code, running only if timeout occurs.
+                                                              // NOTE: inside the braces is the 'onTimeout' mitigation code, running only if
+                                                              // timeout occurs.
                                                               watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
                                                                   Log.d("Sync", "Watchdog, TIMED OUT, setting Error");
                                                                   for (AcceptNotificationHandler.NotificationListener listener: notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
@@ -187,7 +188,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                           } catch (IOException ioe) {
                                                               // Note: this also catches UnknownHostException, a subclass of IOException
                                                               for (AcceptNotificationHandler.NotificationListener listener : notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
-                                                                  listener.onNotification("sync_interrupted");
+                                                                  listener.onNotification("sync_canceled");
                                                               }
                                                               Log.d("Sync", "SyncActivity.run, got exception: " + ioe);
                                                               ioe.printStackTrace();
@@ -308,9 +309,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             case "sync_success":
                 setProgress(getString(R.string.sync_success));
                 break;
-            case "sync_interrupted":
-                // Sync was interrupted or cancelled.
-                setProgress(getString(R.string.sync_interrupted));
+            case "sync_canceled":
+                // Sync was canceled.
+                setProgress(getString(R.string.sync_canceled));
                 break;
             case "sync_error":
                 // Internal HTA error or incompatible versions of HT and HTA.
@@ -343,7 +344,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void receivingFile(final String name) {
-        Log.d("Sync", "   receivingFile, pet watchdog"); // WM, temporary
+        //Log.d("Sync", "   receivingFile, pet watchdog"); // WM, temporary
         watchdog.pet();
 
         // To prevent excess flicker and wasting compute time on progress reports,
@@ -352,18 +353,18 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             return;
         lastProgress = new Date();
         setProgress("receiving " + name);
-        Log.d("Sync", "receivingFile: " + name); // WM, temporary
+        //Log.d("Sync", "receivingFile: " + name); // WM, temporary
     }
 
     @Override
     public void sendingFile(final String name) {
-        Log.d("Sync", "   sendingFile, pet watchdog"); // WM, temporary
+        //Log.d("Sync", "   sendingFile, pet watchdog"); // WM, temporary
         watchdog.pet();
 
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
         setProgress("sending " + name);
-        Log.d("Sync", "sendingFile: " + name); // WM, temporary
+        //Log.d("Sync", "sendingFile: " + name); // WM, temporary
     }
 }

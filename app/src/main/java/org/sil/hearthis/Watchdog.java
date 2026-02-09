@@ -35,7 +35,7 @@ public class Watchdog {
     // we don't, send for help."
     public synchronized void pet() {
         if (watchdogTask != null && !watchdogTask.isDone()) {
-            Log.d("Sync", "Watchdog, pet, not null and not done"); // WM, temporary
+            //Log.d("Sync", "Watchdog, pet, not null and not done"); // WM, temporary
             watchdogTask.cancel(false);
         }
         //Log.d("Sync", "Watchdog, pet, calling scheduler.schedule()"); // WM, temporary
@@ -43,7 +43,7 @@ public class Watchdog {
     }
 
     public void shutdown() {
-        Log.d("Sync", "Watchdog, shutting down"); // WM, temporary
+        //Log.d("Sync", "Watchdog, shutting down"); // WM, temporary
         scheduler.shutdownNow();
     }
 }
