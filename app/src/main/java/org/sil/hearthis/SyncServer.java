@@ -96,16 +96,7 @@ public class SyncServer extends Thread {
                     DefaultHttpServerConnection serverConnection = new DefaultHttpServerConnection();
 
                     serverConnection.bind(socket, new BasicHttpParams());
-                    //Log.d("Sync", "SyncServer.run, new serverConnection, timeout = " + serverConnection.getSocketTimeout()); // WM, TEMPORARY
-                    //Log.d("Sync", "SyncServer.run, calling handleRequest()"); // WM, TEMPORARY
-                    // Set a timeout so that HTA doesn't get stuck if HT can't finish a sync.
-                    //serverConnection.setSocketTimeout(5000); // what's optimum? try 5 secs...
-                    //Log.d("Sync", "                new timeout = " + serverConnection.getSocketTimeout()); // WM, TEMPORARY
-
                     httpService.handleRequest(serverConnection, httpContext);
-
-                    //Log.d("Sync", "SyncServer.run, handleRequest done, calling serverConnection.shutdown()"); // WM, TEMPORARY
-                    //Log.d("Sync", " "); // WM, TEMPORARY
                     serverConnection.shutdown();
                 } catch (IOException e) {
                     e.printStackTrace();

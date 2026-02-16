@@ -31,7 +31,6 @@ public class RequestFileHandler implements HttpRequestHandler {
         Uri uri = Uri.parse(request.getRequestLine().getUri());
         String filePath = uri.getQueryParameter("path");
         if (listener!= null) {
-            Log.d("Sync", "RequestFileHandler, calling listener.sendingFile(" + filePath + ")");
             listener.sendingFile(filePath);
         }
         String path = baseDir  + "/" + filePath;

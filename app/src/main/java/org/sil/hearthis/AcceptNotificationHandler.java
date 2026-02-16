@@ -51,31 +51,28 @@ public class AcceptNotificationHandler implements HttpRequestHandler {
         // sync final status. This is enforced by an early return when the HTA version info is seen.
         //
         // NOTE: like several things in HearThisAndroid, HttpRequest is deprecated. It will be
-        // replaced with something more appropriate, hopefully soon.
+        // replaced with something more appropriate, hopefully soon. When that happens this logic
+        // will most likely also change.
 
         String status = null;
-        Log.d("Sync", "handle, begin, minHtaVersion = " + minHtaVersion); // WM, TEMPORARY
         try {
             String s1 = request.getRequestLine().getUri();
             URI uri = new URI(s1);
             String query = uri.getQuery();
-            Log.d("Sync", "handle, query = " + query); // WM, TEMPORARY
             if (query != null) {
                 for (String param : query.split("&")) {
                     String[] pair = param.split("=", 2);  // limit=2 in case value contains '='
                     if (pair.length == 2) {
                         if (pair[0].equals("status")) {
                             status = pair[1];
-                            Log.d("Sync", "handle, status = " + status); // WM, TEMPORARY
                         } else if (pair[0].equals("minHtaVersion")) {
                             minHtaVersion = pair[1];
-                            Log.d("Sync", "handle, minHtaVersion = " + minHtaVersion + ", returning"); // WM, TEMPORARY
                             return;
                         }
                     }
                 }
             }
-            Log.d("Sync", "handle, results: status = " + status + ", minHtaVersion = " + minHtaVersion); // WM, TEMPORARY
+            //Log.d("Sync", "handle, results: status = " + status + ", minHtaVersion = " + minHtaVersion); // implement for tech support
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -85,12 +82,9 @@ public class AcceptNotificationHandler implements HttpRequestHandler {
             status = "sync_error";
         }
 
-        Log.d("Sync", "handle, final from HT, status = " + status); // WM, TEMPORARY
         for (NotificationListener listener: notificationListeners.toArray(new NotificationListener[notificationListeners.size()])) {
-            Log.d("Sync", "handle, calling listener.onNotification(" + status + ")"); // WM, TEMPORARY
             listener.onNotification(status);
         }
-        Log.d("Sync", "handle, putting status in response (I think)"); // WM, TEMPORARY
         response.setEntity(new StringEntity(status));
     }
 }

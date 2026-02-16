@@ -23,8 +23,6 @@ public class Watchdog {
     private final TimeUnit unit;
 
     public Watchdog(long timeout, TimeUnit unit, Runnable onTimeout) {
-        //Log.d("Sync", "Watchdog, constructor, timeout = " + timeout); // WM, temporary
-        //Log.d("Sync", "                       unit    = " + unit); // WM, temporary
         this.timeout = timeout;
         this.unit = unit;
         this.onTimeout = onTimeout;
@@ -35,15 +33,12 @@ public class Watchdog {
     // we don't, send for help."
     public synchronized void pet() {
         if (watchdogTask != null && !watchdogTask.isDone()) {
-            //Log.d("Sync", "Watchdog, pet, not null and not done"); // WM, temporary
             watchdogTask.cancel(false);
         }
-        //Log.d("Sync", "Watchdog, pet, calling scheduler.schedule()"); // WM, temporary
         watchdogTask = scheduler.schedule(onTimeout, timeout, unit);
     }
 
     public void shutdown() {
-        //Log.d("Sync", "Watchdog, shutting down"); // WM, temporary
         scheduler.shutdownNow();
     }
 }
