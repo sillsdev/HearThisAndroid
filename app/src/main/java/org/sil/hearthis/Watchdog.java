@@ -1,7 +1,6 @@
 package org.sil.hearthis;
 
 import java.util.concurrent.*;
-import android.util.Log;
 
 /**
  * This class implements a "watchdog" timer for the Android side of a HearThis sync operation.
@@ -26,6 +25,9 @@ public class Watchdog {
         this.timeout = timeout;
         this.unit = unit;
         this.onTimeout = onTimeout;
+
+        // Start timer
+        this.pet();
     }
 
     // Subsystems of interest call this method to restart the timer countdown. Basically this
@@ -38,7 +40,7 @@ public class Watchdog {
         watchdogTask = scheduler.schedule(onTimeout, timeout, unit);
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         scheduler.shutdownNow();
     }
 }

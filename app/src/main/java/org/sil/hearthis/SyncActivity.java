@@ -157,6 +157,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                       // provide some users a clue that all is not well.
                                                       ipView.setText(contents);
                                                       preview.setVisibility(View.INVISIBLE);
+                                                      String ipAddress = ipView.getText().toString();
                                                       ExecutorService executor = Executors.newSingleThreadExecutor();
                                                       Handler handler = new Handler(Looper.getMainLooper());
                                                       executor.execute(() -> {
@@ -164,14 +165,14 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                           try {
                                                               String ourIpAddress = getOurIpAddress();
                                                               //Log.d("Sync", "SyncActivity.run, ourIpAddress = " + ourIpAddress); // implement for tech support
-                                                              String ipAddress = ipView.getText().toString();
                                                               InetAddress receiverAddress = InetAddress.getByName(ipAddress);
                                                               DatagramSocket socket = new DatagramSocket();
                                                               byte[] ipBytes = ourIpAddress.getBytes("UTF-8");
                                                               DatagramPacket packet = new DatagramPacket(ipBytes, ipBytes.length, receiverAddress, desktopPort);
                                                               socket.send(packet);
+                                                              socket.close();
 
-                                                              // Don't create and start the watchdog until we KNOW that we are doing a sync.
+                                                              // We don't create and start the watchdog until we KNOW that we are doing a sync.
                                                               // At this point we have responded to the PC's sync offer and are indeed committed.
                                                               // NOTE: inside the braces is the 'onTimeout' mitigation code, running only if
                                                               // timeout occurs.
@@ -195,6 +196,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                               // Background work done, no associated foreground work needed.
                                                           });
                                                       });
+                                                      executor.shutdown();
                                                       cameraSource.stop();
                                                       cameraSource.release();
                                                       cameraSource = null;
@@ -296,7 +298,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         // is unable to complete a sync operation. Getting here means we got a notification
         // from the PC. It should contain the final sync status, but even if it doesn't, the
         // sync operation *is* complete and the watchdog should be turned off.
-        watchdog.shutdown();
+        if (watchdog != null) {
+            watchdog.shutdown();
+        }
 
         // HT-508: HearThis PC now includes sync status in its notification to the app.
         // We can now inform the user about whether sync succeeded.
@@ -339,7 +343,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void receivingFile(final String name) {
-        watchdog.pet();
+        if (watchdog != null) {
+            watchdog.pet();
+        }
 
         // To prevent excess flicker and wasting compute time on progress reports,
         // only change once per second.
@@ -351,7 +357,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void sendingFile(final String name) {
-        watchdog.pet();
+        if (watchdog != null) {
+            watchdog.pet();
+        }
 
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;

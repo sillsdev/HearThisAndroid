@@ -67,6 +67,7 @@ public class AcceptNotificationHandler implements HttpRequestHandler {
                             status = pair[1];
                         } else if (pair[0].equals("minHtaVersion")) {
                             minHtaVersion = pair[1];
+                            response.setEntity(new StringEntity("sync_success"));
                             return;
                         }
                     }
