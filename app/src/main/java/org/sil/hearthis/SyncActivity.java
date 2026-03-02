@@ -181,7 +181,6 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                                   for (AcceptNotificationHandler.NotificationListener listener: notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
                                                                       listener.onNotification("sync_error");
                                                                   }
-                                                                  setProgress(getString(R.string.sync_error));
                                                               });
                                                               //Log.d("Sync", "SyncActivity.run, watchdog started, timeout = " + WATCHDOG_TIMEOUT_SECONDS + " secs"); // implement for tech support
                                                           } catch (IOException ioe) {
