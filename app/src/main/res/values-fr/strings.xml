@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">HearThis</string>
+    <string name="sync_message">Prêt à synchroniser avec l\'application de bureau. Veuillez vous assurer que la version 3.3.0 ou ultérieure de HearThis est installée sur votre ordinateur. Pour commencer la synchronisation à l\'aide de HearThis sur l\'ordinateur, dans le menu Plus, cliquez sur Synchroniser avec Android.</string>
+    <string name="alt_sync_message">Ou vous pouvez saisir ce code dans la boîte de dialogue sur le bureau :</string>
+    <string name="sync_desktop">Synchroniser avec l\'app de bureau</string>
+    <string name="choose_passage">Choisir le passage</string>
+    <string name="play_speaker">Lire avec le haut-parleur</string>
+    <string name="Open">Ouvrir</string>
+    <string name="Publish">Publier</string>
+    <string name="Play">Lire</string>
+    <string name="Record">Enregistrer</string>
+    <string name="Next">Suivant</string>
+    <string name="title_activity_sync">Synchronisation</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="scan">Scanner</string>
+    <string name="continue_button_caption">Continuer</string>
+    <string name="title_activity_choose_book">Choisir un livre</string>
+    <string name="sync_success">Synchronisation terminée avec succès !</string>
+    <string name="choose_project">Choisir un projet</string>
+    <string name="choose_book">Choisir un livre</string>
+    <string name="choose_chapter">Choisir un chapitre</string>
+    <string name="sync_title">Synchroniser</string>
+    <string name="record_title">Enregistrement HearThis</string>
+    <string name="text_scale">Taille du texte</string>
+    <string name="scale_pref_summary">Taille du texte d\'enregistrement</string>
+    <string name="hello_world">Bonjour le monde !</string>
+    <string name="noProject">Aucun projet trouvé. Veuillez choisir un projet dans HearThis Desktop et le synchroniser à l\'aide du bouton Synchroniser.</string>
+    <string name="no_use_without_record">Ce programme ne peut pas enregistrer de son à moins que vous ne lui en donniez l\'autorisation.</string>
+    <string name="record_for_volume">HearThis souhaite enregistrer l\'audio pour afficher votre niveau sonore afin que vous puissiez le vérifier avant l\'enregistrement.</string>
+    <string name="notification_for_sync">HearThis doit afficher une notification pour que vous sachiez que la synchronisation est en cours et pour empêcher le système de l\'interrompre.</string>
+    <string name="need_permissions">Autorisation requise</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Annuler</string>
+    <string name="record_too_short">Maintenez le bouton d\'enregistrement enfoncé pendant que vous parlez, et ne le relâchez que lorsque vous avez terminé.</string>
+    <string name="sync_service_channel_name">Canal du service de synchronisation</string>
+    <string name="receiving_file">réception de %1$s</string>
+    <string name="sending_file">envoi de %1$s</string>
+    <string name="ip_error">Un problema est survenu ! %1$s</string>
+
+</resources>

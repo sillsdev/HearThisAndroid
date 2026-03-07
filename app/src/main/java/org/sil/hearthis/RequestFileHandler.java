@@ -1,55 +1,78 @@
 package org.sil.hearthis;
 
 import android.content.Context;
-import android.net.Uri;
-
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.entity.FileEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpRequestHandler;
-
+import android.util.Log;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
+
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.Response;
 
 /**
  * Created by Thomson on 12/28/2014.
  */
-public class RequestFileHandler implements HttpRequestHandler {
-    Context _parent;
-    public RequestFileHandler(Context parent)
-    {
+public class RequestFileHandler {
+    private static final String TAG = "RequestFileHandler";
+    final Context _parent;
+    private IFileSentNotification listener;
+
+    public RequestFileHandler(Context parent) {
         _parent = parent;
     }
-    @Override
-    public void handle(HttpRequest request, HttpResponse response, HttpContext httpContext) throws HttpException, IOException {
+
+    public Response handle(NanoHTTPD.IHTTPSession session) {
         File baseDir = _parent.getExternalFilesDir(null);
-        Uri uri = Uri.parse(request.getRequestLine().getUri());
-        String filePath = uri.getQueryParameter("path");
-        if (listener!= null)
-            listener.sendingFile(filePath);
-        String path = baseDir  + "/" + filePath;
-        File file = new File(path);
-        if (!file.exists()) {
-            response.setStatusCode(HttpStatus.SC_NOT_FOUND);
-            response.setEntity(new StringEntity(""));
-            return;
+        if (baseDir == null) {
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "External storage not available");
         }
-        FileEntity body = new FileEntity(file, "audio/mpeg");
-        response.setHeader("Content-Type", "application/force-download");
-        //response.setHeader("Content-Disposition","attachment; filename=" + );
-        response.setEntity(body);
+
+        List<String> pathParams = session.getParameters().get("path");
+        String filePath = (pathParams != null && !pathParams.isEmpty())
+                ? pathParams.get(0).replace('\\', '/')
+                : null;
+
+        if (filePath == null) {
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.BAD_REQUEST,
+                    NanoHTTPD.MIME_PLAINTEXT, "Missing path parameter");
+        }
+
+        // Fix Path Traversal Vulnerability
+        File file = new File(baseDir, filePath);
+        try {
+            if (!file.getCanonicalPath().startsWith(baseDir.getCanonicalPath())) {
+                Log.w(TAG, "Attempted path traversal: " + filePath);
+                return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "Access denied");
+            }
+        } catch (IOException e) {
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Error validating path");
+        }
+
+        if (listener != null)
+            listener.sendingFile(filePath);
+        
+        if (!file.exists() || !file.isFile()) {
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "File not found");
+        }
+
+        try {
+            // NanoHTTPD takes care of closing the stream if we pass it to the response.
+            FileInputStream fis = new FileInputStream(file);
+            Response response = NanoHTTPD.newFixedLengthResponse(Response.Status.OK, "application/octet-stream", fis, file.length());
+            response.addHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
+            return response;
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading file: " + file.getAbsolutePath(), e);
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Error reading file");
+        }
     }
 
     public interface IFileSentNotification {
         void sendingFile(String name);
     }
 
-    static IFileSentNotification listener;
-    public static void requestFileSentNotification(IFileSentNotification newListener) {
-        listener = newListener; // We only support notifying the most recent for now.
+    public void setListener(IFileSentNotification newListener) {
+        listener = newListener;
     }
 }

@@ -2,19 +2,21 @@ package org.sil.hearthis;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
-import Script.BibleLocation;
-import Script.BookInfo;
-import Script.IScriptProvider;
-import Script.ScriptLine;
+import script.BibleLocation;
+import script.BookInfo;
+import script.IScriptProvider;
+import script.ScriptLine;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -22,10 +24,20 @@ import android.media.MediaRecorder;
 import android.media.MediaRecorder.AudioEncoder;
 import android.media.MediaRecorder.AudioSource;
 import android.media.MediaRecorder.OutputFormat;
+import android.os.Build;
 import android.os.Bundle;
+
+
+import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.os.BundleCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,7 +46,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -56,62 +68,84 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	boolean wasUsingSpeaker;
 	MediaPlayer playButtonPlayer;
 
-	//Typeface mtfl;
-
-	// We can't use two recorders at once, so may as well be static.
-	static MediaRecorder recorder = null;
-	static WavAudioRecorder waveRecorder = null;
-	public static boolean useWaveRecorder = true;
+	// Back to instance variables to avoid resource contention, but using safe lifecycle management.
+	private MediaRecorder recorder = null;
+	private WavAudioRecorder waveRecorder = null;
+	public static final boolean useWaveRecorder = true;
 	LevelMeterView levelMeter;
 
-	// Enhance: move to AudioButtonsFragment
 	NextButton nextButton;
 	RecordButton recordButton;
 	PlayButton playButton;
-	Date startRecordingTime;
-	boolean starting = false;
+	long startRecordingTime;
+	private final Object startingLock = new Object();
+	volatile boolean starting = false;
+
+	String _recordingFilePath;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			EdgeToEdge.enable(this);
+            // Explicitly set dark icons for the white status bar when edge-to-edge is enabled
+            new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
+                    .setAppearanceLightStatusBars(false);
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			getWindow().getAttributes().layoutInDisplayCutoutMode =
+					WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+		}
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_record);
-		getSupportActionBar().setTitle(R.string.record_title);
-		// Usually not necessary, since we don't start up in this activity. But if the user turns
-		// off our permission to record and then resumes the app (something probably only a tester
-		// would do, but still...) the system apparently re-creates the activity without going
-		// through the normal startup steps. And we NEED this to be called.
+
+		View root = findViewById(R.id.recordActivityRoot);
+		if (root == null){
+			root = findViewById(android.R.id.content);
+		}
+
+		ViewCompat.setOnApplyWindowInsetsListener(root, (v, windowInsets) -> {
+			Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+
+			v.setPadding(insets.left, insets.top, insets.right, 0);
+
+			if (_linesView != null && _linesView.getParent() instanceof ScrollView scrollView) {
+				scrollView.setPadding(0, 0, 0, insets.bottom);
+				scrollView.setClipToPadding(false);
+			}
+
+			return windowInsets;
+		});
+
+		Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.record_title);
 		ServiceLocator.getServiceLocator().init(this);
 
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
-		BookInfo book = (BookInfo) extras.get("bookInfo");
+		assert extras != null;
+		BookInfo book = BundleCompat.getSerializable(extras, "bookInfo", BookInfo.class);
 		if (book != null) {
-			// invoked from chapter page
 			_chapNum = extras.getInt("chapter");
 			_bookNum = book.BookNumber;
 			_provider = book.getScriptProvider();
 			_activeLine = extras.getInt("line", 0);
-		} else {
-			// re-created, maybe after rotate, maybe eventually we start up here?
+		} else if (savedInstanceState != null) {
 			_chapNum = savedInstanceState.getInt(CHAP_NUM);
 			_bookNum = savedInstanceState.getInt(BOOK_NUM);
 			_activeLine = savedInstanceState.getInt(ACTIVE_LINE);
 			_provider = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
+		} else {
+			finish();
+			return;
 		}
 		_lineCount = _provider.GetScriptLineCount(_bookNum, _chapNum);
 
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		_linesView = (LinearLayout) findViewById(R.id.textLineHolder);
+		_linesView = findViewById(R.id.textLineHolder);
 		_linesView.removeAllViews();
 
 		for (int i = 0; i < _lineCount; i++) {
 			ScriptLine line = _provider.GetLine(_bookNum, _chapNum, i);
-			TextView lineView = (TextView) inflater.inflate(R.layout.text_line, null);
-//			if (i == 1)
-//				lineView.setText("\u00F0\u0259 k\u02B0\u00E6t\u02B0 s\u00E6\u0301t\u02B0 o\u0303\u0300\u014A mi\u0302\u02D0");
-//			else if (i == 2)
-//				lineView.setText("Grandroid says 'Hello!'");
-//			else
+			TextView lineView = (TextView) inflater.inflate(R.layout.text_line, _linesView, false);
 			lineView.setText(line.Text);
 			//lineView.setTypeface(mtfl, 0);
 
@@ -122,69 +156,54 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 		((LinesView) findViewById(R.id.zoomView)).updateScale();
 
-		nextButton = (NextButton) findViewById(R.id.nextButton);
-		nextButton.setOnClickListener(new OnClickListener() {
+		nextButton = findViewById(R.id.nextButton);
+		nextButton.setOnClickListener(v -> nextButtonClicked());
 
-			@Override
-			public void onClick(View v) {
-				nextButtonClicked();
+		recordButton = findViewById(R.id.recordButton);
+		recordButton.setOnTouchListener((v, e) -> {
+			if (e.getAction() == MotionEvent.ACTION_DOWN){
+				v.performClick();
 			}
+			recordButtonTouch(e);
+			return true; // we handle all touch events on this button.
 		});
 
-		recordButton = (RecordButton) findViewById(R.id.recordButton);
-		recordButton.setOnTouchListener(new View.OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent e) {
-				recordButtonTouch(e);
-				return true; // we handle all touch events on this button.
-			}
-
-		});
-
-		playButton = (PlayButton) findViewById(R.id.playButton);
-		playButton.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				playButtonClicked();
-			}
-		});
+		playButton = findViewById(R.id.playButton);
+		playButton.setOnClickListener(v -> playButtonClicked());
 		if (_lineCount > 0)
 			setActiveLine(_activeLine);
-		levelMeter = (LevelMeterView) findViewById(R.id.levelMeter);
-		AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-		amAudioManager.setMode(AudioManager.MODE_IN_CALL); //possibly next test only valid while in this mode?
-		wasUsingSpeaker = amAudioManager.isSpeakerphoneOn();
-		amAudioManager.setMode(AudioManager.MODE_NORMAL);
+		levelMeter = findViewById(R.id.levelMeter);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		// The activity has become visible (it is now "resumed").
 		startMonitoring();
+
+		AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		wasUsingSpeaker = isSpeakerphoneOn(am);
 		if (usingSpeaker) {
-			AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-			amAudioManager.setMode(AudioManager.MODE_IN_CALL);
-			amAudioManager.setSpeakerphoneOn(true);
+			am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+			setSpeakerphoneOn(am, true);
 		}
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		stopMonitoring(); //  don't want to waste cycles monitoring while paused.
+		stopMonitoring();
+		stopPlaying();
+
 		BibleLocation location = new BibleLocation();
 		location.bookNumber = _bookNum;
 		location.chapterNumber = _chapNum;
 		location.lineNumber = _activeLine;
 		_provider.saveLocation(location);
-		if (usingSpeaker && !wasUsingSpeaker) {
-			AudioManager amAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-			amAudioManager.setMode(AudioManager.MODE_IN_CALL);
-			amAudioManager.setSpeakerphoneOn(false);
-			amAudioManager.setMode(AudioManager.MODE_NORMAL);
+
+		AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		if (usingSpeaker) {
+			setSpeakerphoneOn(am, false);
+			am.setMode(AudioManager.MODE_NORMAL);
 		}
 	}
 
@@ -206,15 +225,15 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	void setTextColor(int lineNo) {
 		TextView lineView = (TextView) _linesView.getChildAt(lineNo);
-		int lineColor = getResources().getColor(R.color.contextTextLine);
+		int lineColor = ContextCompat.getColor(this, R.color.contextTextLine);
 		if (lineNo == _activeLine) {
-			lineColor = getResources().getColor(R.color.activeTextLine);
+			lineColor = ContextCompat.getColor(this, R.color.activeTextLine);
 		} else {
 			String recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, lineNo);
 			if (new File(recordingFilePath).exists()) {
-				lineColor = getResources().getColor(R.color.recordedTextLine);
+				lineColor = ContextCompat.getColor(this, R.color.recordedTextLine);
 			} else if (_provider.hasRecording(_bookNum, _chapNum, lineNo)) {
-				lineColor = getResources().getColor(R.color.recordedElsewhereTextLine);
+				lineColor = ContextCompat.getColor(this, R.color.recordedElsewhereTextLine);
 			}
 		}
 		lineView.setTextColor(lineColor);
@@ -226,13 +245,14 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		setTextColor(oldLine);
 		setTextColor(_activeLine);
 
-		ScrollView scrollView = (ScrollView) _linesView.getParent();
-		int[] tops = new int[_linesView.getChildCount() + 1];
-		for (int i = 0; i < tops.length - 1; i++) {
-			tops[i] = _linesView.getChildAt(i).getTop();
+		if (_linesView.getParent() instanceof ScrollView scrollView) {
+			int[] tops = new int[_linesView.getChildCount() + 1];
+			for (int i = 0; i < tops.length - 1; i++) {
+				tops[i] = _linesView.getChildAt(i).getTop();
+			}
+			tops[tops.length - 1] = _linesView.getChildAt(tops.length - 2).getBottom();
+			scrollView.scrollTo(0, getNewScrollPosition(scrollView.getScrollY(), scrollView.getHeight(), _activeLine, tops));
 		}
-		tops[tops.length - 1] = _linesView.getChildAt(tops.length - 2).getBottom();
-		scrollView.scrollTo(0, getNewScrollPosition(scrollView.getScrollY(), scrollView.getHeight(), _activeLine, tops));
 		_recordingFilePath = _provider.getRecordingFilePath(_bookNum, _chapNum, _activeLine);
 		recordButton.setIsDefault(true);
 		nextButton.setIsDefault(false);
@@ -241,23 +261,25 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	private void updateDisplayState() {
-		playButton.setButtonState(new File(_recordingFilePath).exists() ? BtnState.Normal : BtnState.Inactive);
+		boolean recordingExists = new File(_recordingFilePath).exists();
+		playButton.setButtonState(recordingExists ? BtnState.Normal : BtnState.Inactive);
+		playButton.setEnabled(recordingExists);
 	}
 
 	static int getNewScrollPosition(int scrollPos, int height, int newLine, int[] tops) {
 		int newScrollPos = scrollPos;
 		int bottom = tops[newLine + 1];
-		int bottomNext = bottom; // bottom of next line (or current, if no next)
+		int bottomNext = bottom;
 		if (newLine < tops.length - 2) {
 			bottomNext = tops[newLine + 2];
 		}
 		if (bottomNext > scrollPos + height) {
-			// Not all of the following line is visible.
+			// Not all the following line is visible.
 			// Initial proposal is to scroll so the bottom of the next line is just visible
 			newScrollPos = bottomNext - height;
 		}
 		int top = tops[newLine];
-		int topPrev = top; // top of previous line (or current, if no previous line)
+		int topPrev = top;
 		if (newLine > 0) {
 			topPrev = tops[newLine - 1];
 		}
@@ -297,13 +319,10 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 	}
 
-	String _recordingFilePath = "";
-
 	void startMonitoring() {
 		if (waveRecorder != null)
 			waveRecorder.release();
 		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		//waveRecorder.prepare(); no; this initializes (and so requires) output file.
 		waveRecorder.setMonitorListener(this);
 		waveRecorder.startMonitoring();
 	}
@@ -322,14 +341,19 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		File oldRecording = new File(_recordingFilePath);
 		if (oldRecording.exists())
-			oldRecording.delete();
+			if (!oldRecording.delete()){
+				Log.e("Recorder","Error deleting old recording at" + _recordingFilePath);
+			}
 		waveRecorder.setOutputFile(_recordingFilePath);
 		waveRecorder.prepare();
 		waveRecorder.setMonitorListener(this);
 		waveRecorder.start();
 		recordButton.setWaiting(false);
-		startRecordingTime = new Date();
-		starting = false;
+		startRecordingTime = System.currentTimeMillis();
+		synchronized (startingLock) {
+			starting = false;
+			startingLock.notifyAll();
+		}
 	}
 
 	void startRecording() {
@@ -337,23 +361,25 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		recordButton.setButtonState(BtnState.Pushed);
 		recordButton.setWaiting(true);
 		if (useWaveRecorder) {
-			starting = true; // protects against trying to stop the recording before we finish starting it.
+			synchronized (startingLock) {
+				starting = true; // protects against trying to stop the recording before we finish starting it.
+			}
 			// Do the initialization of the recorder in another thread so the main one
 			//  can color the button red until we really start recording.
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					startWaveRecorder();
-				}
-			}).start();
+			// Wrap waveRecorder initialization logic in a background thread for smoother UI.
+			new Thread(this::startWaveRecorder).start();
 			return;
 		}
 		if (recorder != null) {
 			recorder.release();
 		}
-		recorder = new MediaRecorder();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+			recorder = new MediaRecorder(this);
+		} else {
+			recorder = createLegacyMediaRecorder();
+		}
 		recorder.setAudioSource(AudioSource.MIC);
-		// Looking for a good combination that produces a useable file.
+		// Looking for a good combination that produces a usable file.
 		// THREE_GPP/AMR_NB was suggested at http://www.grokkingandroid.com/recording-audio-using-androids-mediarecorder-framework/
 		// Eclipse complains that AMR_NB not supported in API 8 (requires 10).
 		// http://www.techotopia.com/index.php/Android_Audio_Recording_and_Playback_using_MediaPlayer_and_MediaRecorder
@@ -367,17 +393,24 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		recorder.setAudioEncodingBitRate(44100);
 		File file = new File(_recordingFilePath);
 		File dir = file.getParentFile();
-		if (!dir.exists())
-			dir.mkdirs();
+		if (dir != null && !dir.exists())
+			if (!dir.mkdirs()){
+				Log.e("Recorder","Error creating directory at " + _recordingFilePath);
+			}
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
 			recorder.prepare();
 			recorder.start();
 			recordButton.setWaiting(false);
-			startRecordingTime = new Date();
+			startRecordingTime = System.currentTimeMillis();
 		} catch (IOException e) {
-			e.printStackTrace();
+			Log.e("Recorder", "Error preparing recorder", e);
 		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private MediaRecorder createLegacyMediaRecorder() {
+		return new MediaRecorder();
 	}
 
 	// completely arbitrary, especially when we're only asking for one dangerous permission.
@@ -414,35 +447,35 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	@Override
 	public void onRequestPermissionsResult(
 			int requestCode,
-			String permissions[],
-			int[] grantResults) {
-		switch (requestCode) {
-			case RECORD_ACTIVITY_RECORD_PERMISSION:
-				if (grantResults.length > 0) {
+			@NonNull String[] permissions,
+			@NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode == RECORD_ACTIVITY_RECORD_PERMISSION) {
+			if (grantResults.length > 0) {
 					// We seem to get spurious callbacks with no results at all, before the user
 					// even responds. This might be because multiple events on the record button
 					// result in multiple requests. So just ignore any callback with no results.
-					if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-						// The user denied permission to record audio. We can't do much useful.
-						// This toast just might help.
-						Toast.makeText(this, R.string.no_use_without_record, Toast.LENGTH_LONG).show();
-					}
+				if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+					// The user denied permission to record audio. We can't do much useful.
+					// This toast just might help.
+					Toast.makeText(this, R.string.no_use_without_record, Toast.LENGTH_LONG).show();
 				}
+			}
 		}
 	}
 
-
-
-
 	void stopRecording() {
-		Date beginStop = new Date();
-		while (starting) {
-			// ouch! this will probably be a short-recording problem! The thread that is
-			// trying to start the recording hasn't finished! Wait until it does.
-			try {
-				Thread.sleep(100);
-			} catch(InterruptedException e) {
-				// shouldn't happen, but Java insists.
+		long beginStop = System.currentTimeMillis();
+		synchronized (startingLock) {
+			while (starting) {
+				// ouch! this will probably be a short-recording problem! The thread that is
+				// trying to start the recording hasn't finished! Wait until it does.
+				try {
+					startingLock.wait(100);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					break;
+				}
 			}
 		}
 		recordButton.setButtonState(BtnState.Normal);
@@ -459,22 +492,22 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
 			recorder = null;
 		}
-		// Don't just use new Date() here. It can take ~half a second to get things stopped.
-		if (beginStop.getTime() - startRecordingTime.getTime() < 500) {
+		// Don't just use current time here. It can take ~half a second to get things stopped.
+		if (beginStop - startRecordingTime < 500) {
 			// Press not long enough; treat as failure.
 			new AlertDialog.Builder(this)
 					//.setTitle("Too short!")
-					.setMessage("Hold down the record button while talking, and only let it go when you're done.")
-					.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int which) {
-							// nothing to do
-						}
+					.setMessage(R.string.record_too_short)
+					.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+						// nothing to do
 					})
 					.setIcon(android.R.drawable.ic_dialog_alert)
 					.show();
 			File badFile = new File(_recordingFilePath);
 			if (badFile.exists()) {
-				badFile.delete();
+				if (!badFile.delete()){
+					Log.e("Recorder","Error deleting bad file at " + _recordingFilePath);
+				}
 				// for now just ignore if we can't delete. (Does not throw.)
 			}
 			return; // skip state changes for successful recording
@@ -486,14 +519,14 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		_provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
 	}
 
-	// Todo: disable when no recording exists.
 	void playButtonClicked() {
 		stopPlaying();
 		playButton.setPlaying(true);
 		playButtonPlayer = new MediaPlayer();
 		playButtonPlayer.setOnCompletionListener(this);
 		stopMonitoring();
-		try {
+        //noinspection CommentedOutCode
+        try {
 			// Todo:  file name and location based on book, chapter, segment
 
 //			AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -501,22 +534,64 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 //			Log.d("Player", "current volume is " + audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 //					+ " of max " + maxVol);
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
-			
+
 			File file = new File(_recordingFilePath);
 			playButtonPlayer.setDataSource(file.getAbsolutePath());
-			playButtonPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+			playButtonPlayer.setAudioAttributes(new AudioAttributes.Builder()
+					.setUsage(AudioAttributes.USAGE_MEDIA)
+					.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+					.build());
 			playButtonPlayer.prepare();
 			playButtonPlayer.start();
 		} catch (Exception e) {
-			e.printStackTrace();
-		}		
+			Log.e("Player", "Error playing audio", e);
+		}
 	}
 
 	private void stopPlaying() {
 		if (playButtonPlayer != null) {
-			playButtonPlayer.stop();
+			try {
+				if (playButtonPlayer.isPlaying()) {
+					playButtonPlayer.stop();
+				}
+			} catch (IllegalStateException e) {
+				Log.e("Player", "Error stopping audio", e);
+			}
 			playButtonPlayer.release();
 			playButtonPlayer = null;
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private boolean isSpeakerphoneOn(AudioManager am) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+			AudioDeviceInfo device = am.getCommunicationDevice();
+			return device != null && device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+		} else {
+			return am.isSpeakerphoneOn();
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private void setSpeakerphoneOn(AudioManager am, boolean on) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+			if (on) {
+				List<AudioDeviceInfo> devices = am.getAvailableCommunicationDevices();
+				AudioDeviceInfo speakerDevice = null;
+				for (AudioDeviceInfo device : devices) {
+					if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+						speakerDevice = device;
+						break;
+					}
+				}
+				if (speakerDevice != null) {
+					am.setCommunicationDevice(speakerDevice);
+				}
+			} else {
+				am.clearCommunicationDevice();
+			}
+		} else {
+			am.setSpeakerphoneOn(on);
 		}
 	}
 
@@ -545,13 +620,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		else if (itemId == R.id.speakers) {
 			usingSpeaker = !item.isChecked();
 			item.setChecked(usingSpeaker);
-			// To get the sound over the main speaker when a headset is plugged in, we need
-			// to pretend to be in a call and set speakerphone mode. Nasty thing to do,
-			// but our users want it...
-			AudioManager amAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-			amAudioManager.setMode(usingSpeaker ? AudioManager.MODE_IN_CALL : AudioManager.MODE_NORMAL);
-			amAudioManager.setSpeakerphoneOn(usingSpeaker);
-
+			AudioManager am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+			am.setMode(usingSpeaker ? AudioManager.MODE_IN_COMMUNICATION : AudioManager.MODE_NORMAL);
+			setSpeakerphoneOn(am, usingSpeaker);
 		}
         return false;
     }
@@ -582,8 +653,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	@Override
 	public void onCompletion(MediaPlayer mediaPlayer) {
-		playButtonPlayer.release();
-		playButtonPlayer = null;
+		stopPlaying();
 		playButton.setPlaying(false);
 		playButton.setButtonState(BtnState.Normal);
 		playButton.setIsDefault(false);

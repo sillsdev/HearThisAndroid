@@ -1,39 +1,57 @@
 package org.sil.hearthis;
 
+import android.os.Build;
 import android.os.Bundle;
+
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import android.view.View;
-import android.widget.AdapterView;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
-import Script.FileSystem;
-import Script.RealScriptProvider;
+import script.FileSystem;
+import script.RealScriptProvider;
 
 public class ChooseProjectActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            EdgeToEdge.enable(this);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_project);
-        getSupportActionBar().setTitle(R.string.choose_project);
+
+        final ListView projectsList = findViewById(R.id.projects_list);
+        
+        if (projectsList != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(projectsList, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
+
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.choose_project);
         ServiceLocator.getServiceLocator().init(this);
+        
         final ArrayList<String> rootDirs = getProjectRootDirectories();
-        ListView projectsList = (ListView) findViewById(R.id.projects_list);
-        ArrayList<String> rootNames = new ArrayList<String>();
+        ArrayList<String> rootNames = new ArrayList<>();
         for (int i = 0; i < rootDirs.size(); i++)  {
             String path = rootDirs.get(i);
-            rootNames.add(path.substring(path.lastIndexOf('/')+1, path.length()));
+            rootNames.add(path.substring(path.lastIndexOf('/')+1));
         }
-        projectsList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, rootNames));
-        projectsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                onItemClicked(rootDirs.get(i));
-            }
-        });
+        
+        if (projectsList != null) {
+            projectsList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, rootNames));
+            projectsList.setOnItemClickListener((parent, view, position, id) -> onItemClicked(rootDirs.get(position)));
+        }
     }
 
     void onItemClicked(String projectPath) {

@@ -1,11 +1,12 @@
-package Script;
+package script;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BibleStats {
 
-    public List<BookStats> Books = new ArrayList<BookStats>();
+    @SuppressWarnings("CanBeFinal")
+    public List<BookStats> Books = new ArrayList<>();
     
     BibleStats() {
 

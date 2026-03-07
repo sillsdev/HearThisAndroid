@@ -2,10 +2,11 @@
 <resources>
 
     <string name="app_name">HearThis</string>
-    <string name="sync_message">Ready to sync with the desktop application. Please make sure you have version 3.3.0 or later of HearThis installed on your computer. To start to sync using HearThis on the computer, on the the More menu, click Sync with Android.</string>
+    <string name="sync_message">Ready to sync with the desktop application. Please make sure you have version 3.3.0 or later of HearThis installed on your computer. To start to sync using HearThis on the computer, on the More menu, click Sync with Android.</string>
     <string name="alt_sync_message">Or you can enter this code into the dialog on the desktop:</string>
     <string name="sync_desktop">Sync with desktop app</string>
     <string name="choose_passage">Choose passage</string>
+    <string name="play_speaker">Play using speaker</string>
     <string name="Open">Open</string>
     <string name="Publish">Publish</string>
     <string name="Play">Play</string>
@@ -28,7 +29,14 @@
     <string name="noProject">No projects found. Please choose a project in HearThis Desktop and synchronize it using the Sync button.</string>
     <string name="no_use_without_record">This program cannot record sound unless you grant it permission to do so</string>
     <string name="record_for_volume">HearThis would like to record audio to display your sound level so you can check it before recording</string>
+    <string name="notification_for_sync">HearThis needs to show a notification so you know the sync is running and to prevent the system from interrupting it.</string>
     <string name="need_permissions">Permission wanted</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="record_too_short">Hold down the record button while talking, and only let it go when you\'re done.</string>
+    <string name="sync_service_channel_name">Sync Service Channel</string>
+    <string name="receiving_file">receiving %1$s</string>
+    <string name="sending_file">sending %1$s</string>
+    <string name="ip_error">Something Wrong! %1$s</string>
+
 </resources>

@@ -6,6 +6,9 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+
 import java.util.Date;
 
 /**
@@ -23,11 +26,11 @@ public class LevelMeterView extends View {
 
     void init(Context context) {
         backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        backgroundPaint.setColor(context.getResources().getColor(R.color.mainBackground));
+        backgroundPaint.setColor(ContextCompat.getColor(context, R.color.mainBackground));
         goodLevelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        goodLevelPaint.setColor(context.getResources().getColor(R.color.goodLevelColor));
+        goodLevelPaint.setColor(ContextCompat.getColor(context, R.color.goodLevelColor));
         badLevelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        badLevelPaint.setColor(context.getResources().getColor(R.color.badLevelColor));
+        badLevelPaint.setColor(ContextCompat.getColor(context, R.color.badLevelColor));
     }
 
     int maxLevelSinceLastUpdate; // percent
@@ -44,15 +47,14 @@ public class LevelMeterView extends View {
         }
     }
 
-    int ledCount = 20;
-    int gapFraction = 5; // Divide space per LED by this to get gap width
+    final int ledCount = 20;
+    final int gapFraction = 5; // Divide space per LED by this to get gap width
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
-        int width = canvas.getWidth();
-        int height = canvas.getHeight();
-        Paint background = new Paint();
+        int width = getWidth();
+        int height = getHeight();
         canvas.drawRect(0.0F, 0.0F, (float)width, (float)height,backgroundPaint);
         int gap = width / ledCount  / gapFraction;
         int ledWidth = width / ledCount - gap;

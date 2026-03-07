@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">HearThis</string>
+    <string name="sync_message">准备好与桌面端应用程序同步。请确保您的计算机上已安装 3.3.0 或更高版本的 HearThis。要开始使用计算机上的 HearThis 进行同步，请在“更多”菜单中点击“与 Android 同步”。</string>
+    <string name="alt_sync_message">或者，您可以在桌面端的对话框中输入此代码：</string>
+    <string name="sync_desktop">与桌面端应用同步</string>
+    <string name="choose_passage">选择段落</string>
+    <string name="play_speaker">使用扬声器播放</string>
+    <string name="Open">打开</string>
+    <string name="Publish">发布</string>
+    <string name="Play">播放</string>
+    <string name="Record">录制</string>
+    <string name="Next">下一步</string>
+    <string name="title_activity_sync">同步</string>
+    <string name="action_settings">设置</string>
+    <string name="scan">扫描</string>
+    <string name="continue_button_caption">继续</string>
+    <string name="title_activity_choose_book">选择图书</string>
+    <string name="sync_success">同步成功完成！</string>
+    <string name="choose_project">选择项目</string>
+    <string name="choose_book">选择图书</string>
+    <string name="choose_chapter">选择章节</string>
+    <string name="sync_title">同步</string>
+    <string name="record_title">HearThis 录制</string>
+    <string name="text_scale">文本缩放</string>
+    <string name="scale_pref_summary">录制文本的缩放比例</string>
+    <string name="hello_world">你好，世界！</string>
+    <string name="noProject">未找到项目。请在 HearThis Desktop 中选择一个项目，然后使用“同步”按钮进行同步。</string>
+    <string name="no_use_without_record">除非您授予录音权限，否则此程序无法录制声音。</string>
+    <string name="record_for_volume">HearThis 希望录制音频以显示您的音量级别，以便您在录音前进行检查。</string>
+    <string name="notification_for_sync">HearThis 需要显示通知，以便您了解同步正在运行并防止系统中断同步。</string>
+    <string name="need_permissions">需要权限</string>
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="record_too_short">说话时请按住录音按钮，只有在完成后才松开。</string>
+    <string name="sync_service_channel_name">同步服务频道</string>
+    <string name="receiving_file">正在接收 %1$s</string>
+    <string name="sending_file">正在发送 %1$s</string>
+    <string name="ip_error">出错了！%1$s</string>
+
+</resources>

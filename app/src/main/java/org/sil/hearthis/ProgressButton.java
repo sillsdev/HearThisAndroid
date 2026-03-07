@@ -8,6 +8,9 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+
 /**
  * Created by Thomson on 3/27/2015.
  * This is a base class for BookButton and ChapterButton, buttons that indicate
@@ -19,6 +22,7 @@ public abstract class ProgressButton extends View {
     protected Paint _forePaint;
     protected Paint _textPaint;
     protected Paint _highlitePaint;
+    private final Rect _rect = new Rect(); // Pre-allocate to avoid GC jank
 
     public ProgressButton(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -26,15 +30,15 @@ public abstract class ProgressButton extends View {
 
     void init() {
         _forePaint = new Paint();
-        _forePaint.setColor(getResources().getColor(getForeColor()));
+        _forePaint.setColor(ContextCompat.getColor(getContext(), getForeColor()));
         _textPaint = new Paint();
-        _textPaint.setColor(getResources().getColor(R.color.navButtonTextColor));
+        _textPaint.setColor(ContextCompat.getColor(getContext(), R.color.navButtonTextColor));
         _textPaint.setTextAlign(Paint.Align.CENTER);
         int fontSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 16, getResources().getDisplayMetrics());
         _textPaint.setTextSize(fontSize);
         _highlitePaint = new Paint();
-        _highlitePaint.setColor(getResources().getColor(R.color.navButtonHiliteColor));
+        _highlitePaint.setColor(ContextCompat.getColor(getContext(), R.color.navButtonHiliteColor));
     }
 
     // Intended to be overidden by bookButton, which uses different colors for different
@@ -46,8 +50,8 @@ public abstract class ProgressButton extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // Try for a width based on our minimum
-        int minw = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth() * 5/4;
-        int w = (int) (minw + getExtraWidth());
+        int minW = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth() * 5/4;
+        int w = (int) (minW + getExtraWidth());
         int h = getPaddingBottom() + getPaddingTop() + getSuggestedMinimumHeight() * 3 / 2;
 
         setMeasuredDimension(w, h);
@@ -59,24 +63,26 @@ public abstract class ProgressButton extends View {
     }
 
     @Override
-    public void onDraw(Canvas canvas) {
+    public void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         if (_forePaint == null) {
             init();
         }
-        int right = this.getRight();
-        int left = this.getLeft();
-        int bottom = this.getBottom();
-        int top = this.getTop();
-        Rect r = new Rect(2, 3, right - left - 2, bottom - top - 2);
-        canvas.drawRect(r, _forePaint);
-        // Logic would suggest vertical position of (bottom - top)/2, but centering
+        
+        int width = getWidth();
+        int height = getHeight();
+        
+        // Update the existing rect instead of creating a new one
+        _rect.set(2, 3, width - 2, height - 2);
+        canvas.drawRect(_rect, _forePaint);
+        
+        // Logic would suggest vertical position of height/2, but centering
         // seems to align baseline, so that works out a bit high. 3/5 seems to produce
         // something that actually looks centered.
-        canvas.drawText(getLabel(), (right - left)/2, (bottom - top)*3/5, _textPaint);
+        canvas.drawText(getLabel(), width / 2f, height * 3 / 5f, _textPaint);
 
         if (isAllRecorded()) {
-            int mid = (bottom - top) / 2;
+            int mid = height / 2;
             int leftTick = mid / 5;
             int halfWidth = mid / 3;
             int v1 = mid + halfWidth * 2 / 3;
@@ -85,9 +91,9 @@ public abstract class ProgressButton extends View {
 
             //draw the first stroke of a check mark
             _highlitePaint.setStrokeWidth((float)4.0);
-            canvas.drawLine(leftTick, v1, leftTick+halfWidth, v2, _highlitePaint);
+            canvas.drawLine(leftTick, v1, (float)leftTick + halfWidth, v2, _highlitePaint);
             //complete the checkmark
-            canvas.drawLine(leftTick+halfWidth, v2, leftTick + halfWidth * 2, v3, _highlitePaint);
+            canvas.drawLine((float)leftTick + halfWidth, v2, (float)leftTick + halfWidth * 2, v3, _highlitePaint);
         }
     }
 

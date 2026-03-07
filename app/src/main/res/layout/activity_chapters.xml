@@ -1,46 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mainBackground" >
+    android:orientation="vertical">
 
-    <TableRow
-        android:id="@+id/bookNameRow"
+    <TextView
+        android:id="@+id/bookNameText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <TextView
-            android:id="@+id/bookNameText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="14"
-            android:paddingBottom="5dp"
-            android:paddingLeft="5dp"
-            android:paddingTop="5dp"
-            android:textColor="@color/labelTextColor" >
-        </TextView>
-
-    </TableRow>
-
-    <TableRow
-        android:id="@+id/chapsRow"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/mainBackground" >
+        android:paddingBottom="5dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="5dp"
+        android:textColor="@color/labelTextColor"
+        android:textSize="18sp"
+        tools:text="Book Name"/>
 
-		<ScrollView
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:stretchColumns="*"
-			android:layout_span="2"
-			android:layout_weight="1">
-			<org.apmem.tools.layouts.FlowLayout
-				android:id="@+id/chapsFlow"
-				xmlns:android="http://schemas.android.com/apk/res/android"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content">
-   			</org.apmem.tools.layouts.FlowLayout>
-		</ScrollView>
-    </TableRow>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-</TableLayout>
+        <org.apmem.tools.layouts.FlowLayout
+            android:id="@+id/chapsFlow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:contentDescription="@string/choose_chapter">
+        </org.apmem.tools.layouts.FlowLayout>
+    </ScrollView>
+
+</LinearLayout>

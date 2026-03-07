@@ -3,7 +3,7 @@ package org.sil.hearthis;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import Script.IScriptProvider;
+import script.IScriptProvider;
 
 /**
  * Button for selecting a chapter in a book (used in ChooseChapterActivity)
@@ -26,6 +26,10 @@ public class ChapterButton extends ProgressButton {
 
     @Override
     protected boolean isAllRecorded() {
+        // Added null check for scriptProvider to avoid NullPointerException during Android Studio Preview
+        if (scriptProvider == null) {
+            return false;
+        }
         int transLines = scriptProvider.GetTranslatedLineCount(bookNumber, chapterNumber);
         int actualLines = scriptProvider.GetScriptLineCount(bookNumber, chapterNumber);
         return actualLines > 0 && transLines == actualLines;
@@ -38,7 +42,8 @@ public class ChapterButton extends ProgressButton {
 
     @Override
     protected int getForeColor() {
-        if (scriptProvider.GetTranslatedLineCount(bookNumber, chapterNumber) == 0)
+        // Added null check for scriptProvider to avoid NullPointerException during Android Studio Preview
+        if (scriptProvider == null || scriptProvider.GetTranslatedLineCount(bookNumber, chapterNumber) == 0)
             return R.color.navButtonUntranslatedColor;
         return super.getForeColor();
     }

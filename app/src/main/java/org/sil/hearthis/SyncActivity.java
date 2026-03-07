@@ -4,24 +4,39 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
-import android.util.SparseArray;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.Detector;
-import com.google.android.gms.vision.barcode.Barcode;
-import com.google.android.gms.vision.barcode.BarcodeDetector;
+import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.common.InputImage;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -29,283 +44,344 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Date;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class SyncActivity extends AppCompatActivity implements AcceptNotificationHandler.NotificationListener,
         AcceptFileHandler.IFileReceivedNotification,
         RequestFileHandler.IFileSentNotification {
 
+    private static final String TAG = "SyncActivity";
     Button scanBtn;
     Button continueButton;
     TextView ipView;
-    SurfaceView preview;
-    int desktopPort = 11007; // port on which the desktop is listening for our IP address.
+    PreviewView previewView;
     private static final int REQUEST_CAMERA_PERMISSION = 201;
+    private static final int REQUEST_NOTIFICATION_PERMISSION = 202;
     boolean scanning = false;
     TextView progressView;
 
-    private BarcodeDetector barcodeDetector;
-    private CameraSource cameraSource;
+    private ExecutorService cameraExecutor;
+    private BarcodeScanner barcodeScanner;
+    private final Handler registrationHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            EdgeToEdge.enable(this);
+            // Explicitly set light icons for the black status bar when edge-to-edge is enabled
+            new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
+                    .setAppearanceLightStatusBars(true);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
-        getSupportActionBar().setTitle(R.string.sync_title);
-        startSyncServer();
-        progressView = (TextView) findViewById(R.id.progress);
-        continueButton = (Button) findViewById(R.id.continue_button);
-        preview = (SurfaceView) findViewById(R.id.surface_view);
-        preview.setVisibility(View.INVISIBLE);
+
+        View syncLayout = findViewById(R.id.sync_layout);
+        if (syncLayout != null) {
+            // Get original padding from XML to preserve it
+            int paddingLeft = syncLayout.getPaddingLeft();
+            int paddingTop = syncLayout.getPaddingTop();
+            int paddingRight = syncLayout.getPaddingRight();
+            int paddingBottom = syncLayout.getPaddingBottom();
+
+            ViewCompat.setOnApplyWindowInsetsListener(syncLayout, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(
+                    paddingLeft + systemBars.left,
+                    paddingTop + systemBars.top,
+                    paddingRight + systemBars.right,
+                    paddingBottom + systemBars.bottom
+                );
+                return insets;
+            });
+        }
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(R.string.sync_title);
+        }
+        requestNotificationPermissionAndStartSync();
+        progressView = findViewById(R.id.progress);
+        continueButton = findViewById(R.id.continue_button);
+        previewView = findViewById(R.id.preview_view);
+        previewView.setVisibility(View.INVISIBLE);
         continueButton.setEnabled(false);
         final SyncActivity thisActivity = this;
-        continueButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                thisActivity.finish();
+        continueButton.setOnClickListener(view -> thisActivity.finish());
+
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build();
+        barcodeScanner = BarcodeScanning.getClient(options);
+    }
+
+    private void requestNotificationPermissionAndStartSync() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS)) {
+                    new AlertDialog.Builder(this)
+                            .setTitle(R.string.need_permissions)
+                            .setMessage(R.string.notification_for_sync)
+                            .setPositiveButton(R.string.ok, (dialog, which) -> ActivityCompat.requestPermissions(SyncActivity.this,
+                                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                                    REQUEST_NOTIFICATION_PERMISSION))
+                            .setNegativeButton(R.string.cancel, (dialog, which) -> startSyncServer())
+                            .create().show();
+                } else {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATION_PERMISSION);
+                }
+                return;
             }
-        });
+        }
+        startSyncServer();
     }
 
     private void startSyncServer() {
         Intent serviceIntent = new Intent(this, SyncService.class);
         startService(serviceIntent);
+        startRegistrationRetry();
+    }
+
+    private void stopSyncServer() {
+        Intent serviceIntent = new Intent(this, SyncService.class);
+        stopService(serviceIntent);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        AcceptFileHandler.requestFileReceivedNotification(this);
-        RequestFileHandler.requestFileSentNotification((this));
+        startRegistrationRetry();
     }
 
     @Override
     protected void onPause() {
+        registrationHandler.removeCallbacks(registrationRunnable);
+        unregisterListeners();
         super.onPause();
-        if (cameraSource != null) {
-            cameraSource.release();
-            cameraSource = null;
+    }
+
+    private final Runnable registrationRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (registerListeners()) {
+                Log.d(TAG, "Successfully registered sync listeners");
+            } else {
+                Log.d(TAG, "SyncService not ready yet, retrying registration...");
+                registrationHandler.postDelayed(this, 500);
+            }
+        }
+    };
+
+    private void startRegistrationRetry() {
+        registrationHandler.removeCallbacks(registrationRunnable);
+        registrationHandler.post(registrationRunnable);
+    }
+
+    private boolean registerListeners() {
+        SyncService service = SyncService.getInstance();
+        if (service != null && service.getServer() != null) {
+            SyncServer server = service.getServer();
+            server.getAcceptFileHandler().setListener(this);
+            server.getRequestFileHandler().setListener(this);
+            server.getAcceptNotificationHandler().addNotificationListener(this);
+            return true;
+        }
+        return false;
+    }
+
+    private void unregisterListeners() {
+        SyncService service = SyncService.getInstance();
+        if (service != null && service.getServer() != null) {
+            SyncServer server = service.getServer();
+            server.getAcceptFileHandler().setListener(null);
+            server.getRequestFileHandler().setListener(null);
+            server.getAcceptNotificationHandler().removeNotificationListener(this);
         }
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing()) {
+            stopSyncServer();
+        }
+        cameraExecutor.shutdown();
+        barcodeScanner.close();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_sync, menu);
-        ipView = (TextView) findViewById(R.id.ip_address);
-        scanBtn = (Button) findViewById(R.id.scan_button);
-        scanBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // This approach is deprecated, but the new approach (using ML_Kit)
-                // requires us to increase MinSdk from 18 to 19 (4.4) and barcode scanning is
-                // not important enough for us to do that. This works fine on an app that targets
-                // SDK 33, at least while running on Android 12.
-                barcodeDetector = new BarcodeDetector.Builder(SyncActivity.this)
-                        .setBarcodeFormats(Barcode.QR_CODE)
+        ipView = findViewById(R.id.ip_address);
+        scanBtn = findViewById(R.id.scan_button);
+        scanBtn.setOnClickListener(v -> {
+            if (ActivityCompat.checkSelfPermission(SyncActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                startCamera();
+            } else {
+                ActivityCompat.requestPermissions(SyncActivity.this, new
+                        String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            }
+        });
+        String ourIpAddress = getOurIpAddress();
+        TextView ourIpView = findViewById(R.id.our_ip_address);
+        ourIpView.setText(ourIpAddress);
+        return true;
+    }
+
+    private void startCamera() {
+        scanning = true;
+        previewView.setVisibility(View.VISIBLE);
+
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+
+                Preview preview = new Preview.Builder().build();
+                preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build();
-                if (cameraSource != null)
-                {
-                    //cameraSource.stop();
-                    cameraSource.release();
-                    cameraSource = null;
-                }
 
-                cameraSource = new CameraSource.Builder(SyncActivity.this, barcodeDetector)
-                        .setRequestedPreviewSize(1920, 1080)
-                        .setAutoFocusEnabled(true)
-                        .build();
-
-                barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
+                imageAnalysis.setAnalyzer(cameraExecutor, new ImageAnalysis.Analyzer() {
                     @Override
-                    public void release() {
-                        // Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_SHORT).show();
-                    }
+                    @androidx.annotation.OptIn(markerClass = androidx.camera.core.ExperimentalGetImage.class)
+                    public void analyze(@NonNull ImageProxy imageProxy) {
+                        if (!scanning) {
+                            imageProxy.close();
+                            return;
+                        }
 
-                    @Override
-                    public void receiveDetections(Detector.Detections<Barcode> detections) {
-                        final SparseArray<Barcode> barcodes = detections.getDetectedItems();
-                        if (scanning && barcodes.size() != 0) {
-                            String contents = barcodes.valueAt(0).displayValue;
-                            if (contents != null) {
-                                scanning = false; // don't want to repeat this if it finds the image again
-                                runOnUiThread(new Runnable() {
-                                                  @Override
-                                                  public void run() {
-                                                      // Enhance: do something (add a magic number or label?) so we can tell if they somehow scanned
-                                                      // some other QR code. We've reduced the chances by telling the BarCodeDetector to
-                                                      // only look for QR codes, but conceivably the user could find something else.
-                                                      // It's only used for one thing: we will try to use it as an IP address and send
-                                                      // a simple DataGram to it containing our own IP address. So if it's no good,
-                                                      // there'll probably be an exception, and it will be ignored, and nothing will happen
-                                                      // except that whatever text the QR code represents shows on the screen, which might
-                                                      // provide some users a clue that all is not well.
-                                                      ipView.setText(contents);
-                                                      preview.setVisibility(View.INVISIBLE);
-                                                      SendMessage sendMessageTask = new SendMessage();
-                                                      sendMessageTask.ourIpAddress = getOurIpAddress();
-                                                      sendMessageTask.execute();
-                                                      cameraSource.stop();
-                                                      cameraSource.release();
-                                                      cameraSource = null;
-                                                  }
-                                              });
-
-                            }
+                        @SuppressLint("UnsafeOptInUsageError")
+                        android.media.Image mediaImage = imageProxy.getImage();
+                        if (mediaImage != null) {
+                            InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+                            barcodeScanner.process(image)
+                                    .addOnSuccessListener(barcodes -> {
+                                        if (scanning && !barcodes.isEmpty()) {
+                                            handleBarcode(barcodes.get(0));
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
+                                    .addOnCompleteListener(task -> imageProxy.close());
+                        } else {
+                            imageProxy.close();
                         }
                     }
                 });
 
-                if (ActivityCompat.checkSelfPermission(SyncActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    try {
-                        scanning = true;
-                        preview.setVisibility(View.VISIBLE);
-                        cameraSource.start(preview.getHolder());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    ActivityCompat.requestPermissions(SyncActivity.this, new
-                            String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-                }
+                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+
+                cameraProvider.unbindAll();
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Use case binding failed", e);
             }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void handleBarcode(Barcode barcode) {
+        String contents = barcode.getDisplayValue();
+        if (contents == null) return;
+
+        scanning = false;
+        runOnUiThread(() -> {
+            ipView.setText(contents);
+            previewView.setVisibility(View.INVISIBLE);
+
+            sendRegistrationMessage(contents);
+
+            ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+            cameraProviderFuture.addListener(() -> {
+                try {
+                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                    cameraProvider.unbindAll();
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.e(TAG, "Failed to unbind camera", e);
+                }
+            }, ContextCompat.getMainExecutor(this));
         });
-        String ourIpAddress = getOurIpAddress();
-        TextView ourIpView = (TextView) findViewById(R.id.our_ip_address);
-        ourIpView.setText(ourIpAddress);
-        AcceptNotificationHandler.addNotificationListener(this);
-        return true;
+    }
+
+    private void sendRegistrationMessage(final String desktopIpAddress) {
+        final String ourIpAddress = getOurIpAddress();
+        if (ourIpAddress == null) return;
+        new Thread(() -> {
+            try (DatagramSocket socket = new DatagramSocket()) {
+                // Registration must be sent to port 11007 as a UTF-8 encoded string containing
+                // only the Android device's IPv4 address (no prefix or whitespace), as expected
+                // by the desktop application.
+                byte[] data = ourIpAddress.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(desktopIpAddress), 11007);
+                socket.send(packet);
+            } catch (IOException e) {
+                Log.e(TAG, "Error sending registration packet", e);
+            }
+        }).start();
     }
 
     @SuppressLint("MissingPermission")
     @Override
     public void onRequestPermissionsResult(
             int requestCode,
-            String permissions[],
-            int[] grantResults) {
+            @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case REQUEST_CAMERA_PERMISSION:
-                if (grantResults.length > 0) {
-                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        try {
-                            scanning = true;
-                            preview.setVisibility(View.VISIBLE);
-                            cameraSource.start(preview.getHolder());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startCamera();
                 }
+                break;
+            case REQUEST_NOTIFICATION_PERMISSION:
+                startSyncServer();
+                break;
         }
-    }
-
-    // Get the IP address of this device (on the WiFi network) to transmit to the desktop.
-    private String getOurIpAddress() {
-        String ip = "";
-        try {
-            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while (enumNetworkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = enumNetworkInterfaces.nextElement();
-                Enumeration<InetAddress> enumInetAddress = networkInterface.getInetAddresses();
-                while (enumInetAddress.hasMoreElements()) {
-                    InetAddress inetAddress = enumInetAddress.nextElement();
-
-                    if (inetAddress.isSiteLocalAddress()) {
-                        return inetAddress.getHostAddress();
-                    }
-
-                }
-
-            }
-
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            ip += "Something Wrong! " + e.toString() + "\n";
-        }
-
-        return ip;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onNotification(String message) {
-        AcceptNotificationHandler.removeNotificationListener(this);
-        setProgress(getString(R.string.sync_success));
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                continueButton.setEnabled(true);
-            }
+        Log.d(TAG, "Notification received: " + message);
+        runOnUiThread(() -> {
+            progressView.setText(R.string.sync_success);
+            continueButton.setEnabled(true);
         });
     }
 
-    void setProgress(final String text) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                progressView.setText(text);
-            }
-        });
-    }
-
-    Date lastProgress = new Date();
-    boolean stopUpdatingProgress = false;
-
     @Override
-    public void receivingFile(final String name) {
-        // To prevent excess flicker and wasting compute time on progress reports,
-        // only change once per second.
-        if (new Date().getTime() - lastProgress.getTime() < 1000)
-            return;
-        lastProgress = new Date();
-        setProgress("receiving " + name);
+    public void receivingFile(String path) {
+        Log.d(TAG, "File received: " + path);
+        runOnUiThread(() -> progressView.setText(getString(R.string.receiving_file, path)));
     }
 
     @Override
-    public void sendingFile(final String name) {
-        if (new Date().getTime() - lastProgress.getTime() < 1000)
-            return;
-        lastProgress = new Date();
-        setProgress("sending " + name);
+    public void sendingFile(String path) {
+        Log.d(TAG, "File sent: " + path);
+        runOnUiThread(() -> progressView.setText(getString(R.string.sending_file, path)));
     }
 
-    // This class is responsible to send one message packet to the IP address we
-    // obtained from the desktop, containing the Android's own IP address.
-    private class SendMessage extends AsyncTask<Void, Void, Void> {
-
-        public String ourIpAddress;
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                String ipAddress = ipView.getText().toString();
-                InetAddress receiverAddress = InetAddress.getByName(ipAddress);
-                DatagramSocket socket = new DatagramSocket();
-                byte[] buffer = ourIpAddress.getBytes("UTF-8");
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, receiverAddress, desktopPort);
-                socket.send(packet);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+    private String getOurIpAddress() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    String hostAddress = inetAddress.getHostAddress();
+                    if (!inetAddress.isLoopbackAddress() && !inetAddress.isLinkLocalAddress() && hostAddress != null && hostAddress.contains(".")) {
+                        return hostAddress;
+                    }
+                }
             }
-            return null;
+        } catch (SocketException ex) {
+            Log.e(TAG, ex.toString());
         }
+        return null;
     }
 }

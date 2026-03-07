@@ -6,6 +6,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
 
+import androidx.core.content.ContextCompat;
+
 /**
  * Created by Thomson on 3/6/2016.
  */
@@ -13,51 +15,53 @@ public class NextButton extends CustomButton {
     public NextButton(Context context, AttributeSet attrs) {
         super(context, attrs);
         blueFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        blueFillPaint.setColor(context.getResources().getColor(R.color.audioButtonBlueColor));
+        blueFillPaint.setColor(ContextCompat.getColor(context, R.color.audioButtonBlueColor));
         highlightBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        highlightBorderPaint.setColor(context.getResources().getColor(R.color.buttonSuggestedBorderColor));
+        highlightBorderPaint.setColor(ContextCompat.getColor(context, R.color.buttonSuggestedBorderColor));
         highlightBorderPaint.setStrokeWidth(4f);
         highlightBorderPaint.setStyle(Paint.Style.STROKE);
 
         waitPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        waitPaint.setColor(context.getResources().getColor(R.color.buttonWaitingColor));
+        waitPaint.setColor(ContextCompat.getColor(context, R.color.buttonWaitingColor));
 
         playBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playBorderPaint.setColor(context.getResources().getColor(R.color.buttonSuggestedBorderColor));
+        playBorderPaint.setColor(ContextCompat.getColor(context, R.color.buttonSuggestedBorderColor));
         playBorderPaint.setStrokeWidth(6f);
         playBorderPaint.setStyle(Paint.Style.STROKE);
+
+        disabledPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        disabledPaint.setColor(ContextCompat.getColor(context, R.color.audioButtonDisabledColor));
     }
 
-    Paint blueFillPaint;
-    Paint highlightBorderPaint;
-    Paint waitPaint;
-    Paint disabledPaint;
-    Paint playBorderPaint;
+    final Paint blueFillPaint;
+    final Paint highlightBorderPaint;
+    final Paint waitPaint;
+    final Paint disabledPaint;
+    final Paint playBorderPaint;
+    private final Path arrow = new Path();
 
     @Override
     public void onDraw(Canvas canvas) {
         //super.onDraw(canvas);
-        int right = this.getRight();
-        int left = this.getLeft();
-        int bottom = this.getBottom();
-        int top = this.getTop();
+        int w = getWidth();
+        int h = getHeight();
         float moveWhenPushed = 3.0f;
         float inset = 1; // a margin to prevent clipping the shape.
-        float size = Math.min(right - left, bottom - top) - moveWhenPushed - inset;
+        float size = Math.min(w, h) - moveWhenPushed - inset;
         float thick = size/3;
-        float delta = inset + (getButtonState() == BtnState.Pushed ? moveWhenPushed : 0f);
-        float mid = size / 2 + delta;
-        float stem = size * 12/33 + delta;
+        float deltaX = (w - size) / 2f + (getButtonState() == BtnState.Pushed ? moveWhenPushed : 0f);
+        float deltaY = (h - size) / 2f + (getButtonState() == BtnState.Pushed ? moveWhenPushed : 0f);
+        float midX = size / 2 + deltaX;
+        float stemY = size * 12/33 + deltaY;
 
-        Path arrow = new Path();
-        arrow.moveTo(mid + thick / 2,delta); // upper right corner of stem
-        arrow.lineTo(mid - thick / 2, delta); // upper left corner of stem
-        arrow.lineTo(mid - thick / 2, stem); // left junction of stem and arrow
-        arrow.lineTo(delta, stem); // left point of arrow
-        arrow.lineTo(size/2 + delta, size + delta); // tip of arrow
-        arrow.lineTo(size, stem); // right point of arrow
-        arrow.lineTo(mid + thick / 2, stem); // right junction of stem and arrow
-        arrow.lineTo(mid + thick / 2, delta); // back to start
+        arrow.moveTo(midX + thick / 2, deltaY); // upper right corner of stem
+        arrow.lineTo(midX - thick / 2, deltaY); // upper left corner of stem
+        arrow.lineTo(midX - thick / 2, stemY); // left junction of stem and arrow
+        arrow.lineTo(deltaX, stemY); // left point of arrow
+        arrow.lineTo(size/2 + deltaX, size + deltaY); // tip of arrow
+        arrow.lineTo(size + deltaX, stemY); // right point of arrow
+        arrow.lineTo(midX + thick / 2, stemY); // right junction of stem and arrow
+        arrow.lineTo(midX + thick / 2, deltaY); // back to start
 
         switch (getButtonState())
         {
