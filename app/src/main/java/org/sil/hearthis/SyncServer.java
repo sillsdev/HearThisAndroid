@@ -1,5 +1,7 @@
 package org.sil.hearthis;
 
+import android.util.Log;
+
 import org.apache.http.HttpException;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -94,9 +96,7 @@ public class SyncServer extends Thread {
                     DefaultHttpServerConnection serverConnection = new DefaultHttpServerConnection();
 
                     serverConnection.bind(socket, new BasicHttpParams());
-
                     httpService.handleRequest(serverConnection, httpContext);
-
                     serverConnection.shutdown();
                 } catch (IOException e) {
                     e.printStackTrace();

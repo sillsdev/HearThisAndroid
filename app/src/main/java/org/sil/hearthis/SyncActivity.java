@@ -1,15 +1,19 @@
 package org.sil.hearthis;
 
+import static org.sil.hearthis.AcceptNotificationHandler.notificationListeners;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,15 +27,20 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+//import org.apache.http.entity.StringEntity;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+//import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class SyncActivity extends AppCompatActivity implements AcceptNotificationHandler.NotificationListener,
@@ -44,11 +53,12 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     SurfaceView preview;
     int desktopPort = 11007; // port on which the desktop is listening for our IP address.
     private static final int REQUEST_CAMERA_PERMISSION = 201;
+    private static final int WATCHDOG_TIMEOUT_SECONDS = 10;  // match the HearThis timeout?
     boolean scanning = false;
     TextView progressView;
-
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
+    private Watchdog watchdog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +135,8 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                         // Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_SHORT).show();
                     }
 
+                    // Replacing 'AsyncTask' (deprecated) with 'Executors' and 'Handlers' in this method is inspired by:
+                    // https://stackoverflow.com/questions/58767733/the-asynctask-api-is-deprecated-in-android-11-what-are-the-alternatives
                     @Override
                     public void receiveDetections(Detector.Detections<Barcode> detections) {
                         final SparseArray<Barcode> barcodes = detections.getDetectedItems();
@@ -145,15 +157,50 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                                                       // provide some users a clue that all is not well.
                                                       ipView.setText(contents);
                                                       preview.setVisibility(View.INVISIBLE);
-                                                      SendMessage sendMessageTask = new SendMessage();
-                                                      sendMessageTask.ourIpAddress = getOurIpAddress();
-                                                      sendMessageTask.execute();
+                                                      String ipAddress = ipView.getText().toString();
+                                                      ExecutorService executor = Executors.newSingleThreadExecutor();
+                                                      Handler handler = new Handler(Looper.getMainLooper());
+                                                      executor.execute(() -> {
+                                                          // Background work: send UDP packet to IP address given in the QR code.
+                                                          try {
+                                                              String ourIpAddress = getOurIpAddress();
+                                                              //Log.d("Sync", "SyncActivity.run, ourIpAddress = " + ourIpAddress); // implement for tech support
+                                                              InetAddress receiverAddress = InetAddress.getByName(ipAddress);
+                                                              DatagramSocket socket = new DatagramSocket();
+                                                              byte[] ipBytes = ourIpAddress.getBytes("UTF-8");
+                                                              DatagramPacket packet = new DatagramPacket(ipBytes, ipBytes.length, receiverAddress, desktopPort);
+                                                              socket.send(packet);
+                                                              socket.close();
+
+                                                              // We don't create and start the watchdog until we KNOW that we are doing a sync.
+                                                              // At this point we have responded to the PC's sync offer and are indeed committed.
+                                                              // NOTE: inside the braces is the 'onTimeout' mitigation code, running only if
+                                                              // timeout occurs.
+                                                              watchdog = new Watchdog(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> {
+                                                                  //Log.d("Sync", "Watchdog, TIMED OUT, setting Error"); // implement for tech support
+                                                                  for (AcceptNotificationHandler.NotificationListener listener: notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
+                                                                      listener.onNotification("sync_error");
+                                                                  }
+                                                              });
+                                                              //Log.d("Sync", "SyncActivity.run, watchdog started, timeout = " + WATCHDOG_TIMEOUT_SECONDS + " secs"); // implement for tech support
+                                                          } catch (IOException ioe) {
+                                                              // Note: this also catches UnknownHostException, a subclass of IOException
+                                                              for (AcceptNotificationHandler.NotificationListener listener : notificationListeners.toArray(new AcceptNotificationHandler.NotificationListener[notificationListeners.size()])) {
+                                                                  listener.onNotification("sync_canceled");
+                                                              }
+                                                              //Log.d("Sync", "SyncActivity.run, got exception: " + ioe); // implement for tech support
+                                                              ioe.printStackTrace();
+                                                          }
+                                                          handler.post(() -> {
+                                                              // Background work done, no associated foreground work needed.
+                                                          });
+                                                      });
+                                                      executor.shutdown();
                                                       cameraSource.stop();
                                                       cameraSource.release();
                                                       cameraSource = null;
                                                   }
                                               });
-
                             }
                         }
                     }
@@ -216,11 +263,8 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                     if (inetAddress.isSiteLocalAddress()) {
                         return inetAddress.getHostAddress();
                     }
-
                 }
-
             }
-
         } catch (SocketException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -248,7 +292,35 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     @Override
     public void onNotification(String message) {
         AcceptNotificationHandler.removeNotificationListener(this);
-        setProgress(getString(R.string.sync_success));
+
+        // The watchdog timer prevents the Android app from getting stuck if the PC side
+        // is unable to complete a sync operation. Getting here means we got a notification
+        // from the PC. It should contain the final sync status, but even if it doesn't, the
+        // sync operation *is* complete and the watchdog should be turned off.
+        if (watchdog != null) {
+            watchdog.shutdown();
+        }
+
+        // HT-508: HearThis PC now includes sync status in its notification to the app.
+        // We can now inform the user about whether sync succeeded.
+        switch (message) {
+            case "sync_success":
+                setProgress(getString(R.string.sync_success));
+                break;
+            case "sync_canceled":
+                // Sync was canceled.
+                setProgress(getString(R.string.sync_canceled));
+                break;
+            case "sync_error":
+                // Internal HTA error or incompatible versions of HT and HTA.
+                setProgress(getString(R.string.sync_error));
+                break;
+            default:
+                // Not a sync status; should never happen. Raise an error.
+                setProgress(getString(R.string.sync_error));
+                //Log.d("Sync", "onNotification.default, bad status: " + message); // implement for tech support
+                break;
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -270,6 +342,10 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void receivingFile(final String name) {
+        if (watchdog != null) {
+            watchdog.pet();
+        }
+
         // To prevent excess flicker and wasting compute time on progress reports,
         // only change once per second.
         if (new Date().getTime() - lastProgress.getTime() < 1000)
@@ -280,32 +356,13 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     @Override
     public void sendingFile(final String name) {
+        if (watchdog != null) {
+            watchdog.pet();
+        }
+
         if (new Date().getTime() - lastProgress.getTime() < 1000)
             return;
         lastProgress = new Date();
         setProgress("sending " + name);
-    }
-
-    // This class is responsible to send one message packet to the IP address we
-    // obtained from the desktop, containing the Android's own IP address.
-    private class SendMessage extends AsyncTask<Void, Void, Void> {
-
-        public String ourIpAddress;
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                String ipAddress = ipView.getText().toString();
-                InetAddress receiverAddress = InetAddress.getByName(ipAddress);
-                DatagramSocket socket = new DatagramSocket();
-                byte[] buffer = ourIpAddress.getBytes("UTF-8");
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, receiverAddress, desktopPort);
-                socket.send(packet);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
     }
 }
