@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +81,10 @@ public class AcceptFileHandler {
                     copyFile(new File(contentOrPath), file);
                 } else {
                     try (FileOutputStream out = new FileOutputStream(file)) {
-                        out.write(contentOrPath.getBytes(StandardCharsets.UTF_8));
+                        byte[] data = contentOrPath.getBytes();
+                        out.write(data);
+                    } catch (Exception e) {
+                        return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "failure: " + e.getMessage() + "\n");
                     }
                 }
                 return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, "success\n");
