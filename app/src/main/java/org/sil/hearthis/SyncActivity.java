@@ -289,7 +289,14 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     private void handleBarcode(Barcode barcode) {
         String contents = barcode.getDisplayValue();
-        if (contents == null) return;
+        if (contents == null) {
+            Log.e(TAG, "Barcode content is null");
+            return;
+        }
+        if (ipView == null) {
+            Log.e(TAG, "ipView is null");
+            return;
+        }
 
         scanning = false;
         runOnUiThread(() -> {
@@ -349,6 +356,8 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     @Override
     public void onNotification(String message) {
         Log.d(TAG, "Notification received: " + message);
+        // TODO: HearThis sends empty message instead of success/fail. Make it send a real result.
+        // TODO: HearThisAndroid ignores it and assumes success. Make it process 'message' appropriately.
         runOnUiThread(() -> {
             progressView.setText(R.string.sync_success);
             continueButton.setEnabled(true);
