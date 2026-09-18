@@ -40,8 +40,17 @@ public class RealFileSystem implements IFileSystem {
     @Override
     public ArrayList<String> getDirectories(String path) {
         ArrayList<String> result = new ArrayList<>();
+        if (path == null) {
+            return result;
+        }
+
         File directory = new File(path);
-        for (File file : Objects.requireNonNull(directory.listFiles())){
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
             if (file.isDirectory()) {
                 result.add(file.getPath());
             }
