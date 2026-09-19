@@ -5,10 +5,15 @@ import org.sil.hearthis.ServiceLocator;
 import java.io.Serializable;
 
 public class BookInfo implements Serializable {
-    public final String  Name;
+    private String _projectName;
+    public final String Name;
 	public String Abbr;
 	public final int ChapterCount;
 	public final int BookNumber;
+    // This element is no longer used in BookInfo, but users of this code could encounter older
+    // versions that do. That shouldn't cause trouble, but since I don't know how older code does
+    // things we will leave this in to prevent possible issues.
+    private final int[] _versesPerChapter;
 
     // This doesn't get serialized (much too expensive, and we only want to have one).
     // When a BookInfo is passed from one activity to another, (the reason to be Serializable)
@@ -20,8 +25,10 @@ public class BookInfo implements Serializable {
 	public BookInfo(String projectName, int number, String name, int chapterCount,
                     int[] versesPerChapter, IScriptProvider scriptProvider)	{
 		BookNumber = number;
+        _projectName = projectName;
         Name = name;
         ChapterCount = chapterCount;
+        _versesPerChapter = versesPerChapter;
         // / <summary>
         // / [0] == intro, [1] == chapter 1, etc.
         // / </summary>
