@@ -198,7 +198,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		location.bookNumber = _bookNum;
 		location.chapterNumber = _chapNum;
 		location.lineNumber = _activeLine;
-		_provider.saveLocation(location);
+		if (_provider != null) {
+			_provider.saveLocation(location);
+		}
 
 		AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 		if (usingSpeaker) {
