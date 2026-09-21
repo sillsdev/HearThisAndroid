@@ -142,7 +142,7 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     private void startSyncServer() {
         Intent serviceIntent = new Intent(this, SyncService.class);
-        startService(serviceIntent);
+        ContextCompat.startForegroundService(this, serviceIntent);
         startRegistrationRetry();
     }
 
@@ -293,12 +293,13 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
             Log.e(TAG, "Barcode content is null");
             return;
         }
+
+        scanning = false;
+
         if (ipView == null) {
             Log.e(TAG, "ipView is null");
             return;
         }
-
-        scanning = false;
         runOnUiThread(() -> {
             ipView.setText(contents);
             previewView.setVisibility(View.INVISIBLE);

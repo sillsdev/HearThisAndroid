@@ -170,8 +170,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 		playButton = findViewById(R.id.playButton);
 		playButton.setOnClickListener(v -> playButtonClicked());
-		if (_lineCount > 0)
+		if (_lineCount > 0) {
 			setActiveLine(_activeLine);
+		}
 		levelMeter = findViewById(R.id.levelMeter);
 	}
 
@@ -263,9 +264,11 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	private void updateDisplayState() {
-		boolean recordingExists = new File(_recordingFilePath).exists();
-		playButton.setButtonState(recordingExists ? BtnState.Normal : BtnState.Inactive);
-		playButton.setEnabled(recordingExists);
+		if (_recordingFilePath != null) {
+			boolean recordingExists = new File(_recordingFilePath).exists();
+			playButton.setButtonState(recordingExists ? BtnState.Normal : BtnState.Inactive);
+			playButton.setEnabled(recordingExists);
+		}
 	}
 
 	static int getNewScrollPosition(int scrollPos, int height, int newLine, int[] tops) {
@@ -304,8 +307,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	void recordButtonTouch(MotionEvent e) {
-		if (!requestRecordAudioPermission())
+		if (!requestRecordAudioPermission()) {
 			return; // if we don't already have this, we can't record at this point.
+		}
 		int maskedAction = e.getActionMasked();
 
 		switch (maskedAction) {
@@ -322,8 +326,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	void startMonitoring() {
-		if (waveRecorder != null)
+		if (waveRecorder != null) {
 			waveRecorder.release();
+		}
 		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		waveRecorder.setMonitorListener(this);
 		waveRecorder.startMonitoring();
@@ -338,14 +343,25 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	void startWaveRecorder() {
-		if (waveRecorder != null)
+		if (waveRecorder != null) {
 			waveRecorder.release();
+		}
 		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		File oldRecording = new File(_recordingFilePath);
-		if (oldRecording.exists())
-			if (!oldRecording.delete()){
-				Log.e("Recorder","Error deleting old recording at" + _recordingFilePath);
+		if (_recordingFilePath == null) {
+			Log.e("Recorder","Error, _recordingFilePath is null [1]");
+			recordButton.setWaiting(false);
+			synchronized (startingLock) {
+				starting = false;
+				startingLock.notifyAll();
 			}
+			return;
+		}
+		File oldRecording = new File(_recordingFilePath);
+		if (oldRecording.exists()) {
+			if (!oldRecording.delete()) {
+				Log.e("Recorder", "Error deleting old recording at" + _recordingFilePath);
+			}
+		}
 		waveRecorder.setOutputFile(_recordingFilePath);
 		waveRecorder.prepare();
 		waveRecorder.setMonitorListener(this);
@@ -393,12 +409,18 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		recorder.setAudioEncoder(AudioEncoder.AAC);
 		recorder.setAudioSamplingRate(44100);
 		recorder.setAudioEncodingBitRate(44100);
+
+		if (_recordingFilePath == null) {
+			Log.e("Recorder","Error, _recordingFilePath is null [2]");
+			return;
+		}
 		File file = new File(_recordingFilePath);
 		File dir = file.getParentFile();
-		if (dir != null && !dir.exists())
-			if (!dir.mkdirs()){
-				Log.e("Recorder","Error creating directory at " + _recordingFilePath);
+		if (dir != null && !dir.exists()) {
+			if (!dir.mkdirs()) {
+				Log.e("Recorder", "Error creating directory at " + _recordingFilePath);
 			}
+		}
 		recorder.setOutputFile(file.getAbsolutePath());
 		try {
 			recorder.prepare();
@@ -490,8 +512,10 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			recorder.stop();
 			recorder.reset();
 			recorder.release();
-			File file = new File(_recordingFilePath);
-			Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
+			if (_recordingFilePath != null) {
+				File file = new File(_recordingFilePath);
+				Log.d("Recorder", "Recorder finished and made file " + file.getAbsolutePath() + " with length " + file.length());
+			}
 			recorder = null;
 		}
 		// Don't just use current time here. It can take ~half a second to get things stopped.
@@ -505,12 +529,14 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 					})
 					.setIcon(android.R.drawable.ic_dialog_alert)
 					.show();
-			File badFile = new File(_recordingFilePath);
-			if (badFile.exists()) {
-				if (!badFile.delete()){
-					Log.e("Recorder","Error deleting bad file at " + _recordingFilePath);
+			if (_recordingFilePath != null) {
+				File badFile = new File(_recordingFilePath);
+				if (badFile.exists()) {
+					if (!badFile.delete()){
+						Log.e("Recorder","Error deleting bad file at " + _recordingFilePath);
+					}
+					// for now just ignore if we can't delete. (Does not throw.)
 				}
-				// for now just ignore if we can't delete. (Does not throw.)
 			}
 			return; // skip state changes for successful recording
 		}
@@ -537,14 +563,16 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 //					+ " of max " + maxVol);
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
 
-			File file = new File(_recordingFilePath);
-			playButtonPlayer.setDataSource(file.getAbsolutePath());
-			playButtonPlayer.setAudioAttributes(new AudioAttributes.Builder()
-					.setUsage(AudioAttributes.USAGE_MEDIA)
-					.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-					.build());
-			playButtonPlayer.prepare();
-			playButtonPlayer.start();
+			if (_recordingFilePath != null) {
+				File file = new File(_recordingFilePath);
+				playButtonPlayer.setDataSource(file.getAbsolutePath());
+				playButtonPlayer.setAudioAttributes(new AudioAttributes.Builder()
+						.setUsage(AudioAttributes.USAGE_MEDIA)
+						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+						.build());
+				playButtonPlayer.prepare();
+				playButtonPlayer.start();
+			}
 		} catch (Exception e) {
 			Log.e("Player", "Error playing audio", e);
 		}
