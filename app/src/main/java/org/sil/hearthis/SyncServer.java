@@ -68,16 +68,22 @@ public class SyncServer extends NanoHTTPD {
         String uri = session.getUri();
         Log.d(TAG, "Serving URI: " + uri);
 
+        Response response;
         if (uri.startsWith("/getfile")) {
-            return requestFileHandler.handle(session);
+            response = requestFileHandler.handle(session);
         } else if (uri.startsWith("/putfile")) {
-            return acceptFileHandler.handle(session);
+            response = acceptFileHandler.handle(session);
         } else if (uri.startsWith("/list")) {
-            return listDirectoryHandler.handle(session);
+            response = listDirectoryHandler.handle(session);
         } else if (uri.startsWith("/notify")) {
-            return acceptNotificationHandler.handle(session);
+            response = acceptNotificationHandler.handle(session);
         } else {
-            return deviceNameHandler.handle(session);
+            response = deviceNameHandler.handle(session);
         }
+        // Handlers may return early without consuming the request body, which would corrupt a
+        // kept-alive connection. .NET's WebClient reuses connections by default and throws
+        // "A connection that was expected to be kept alive was closed by the server".
+        response.addHeader("Connection", "close");
+        return response;
     }
 }
