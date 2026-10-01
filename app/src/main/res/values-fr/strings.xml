@@ -28,6 +28,7 @@
     <string name="hello_world">Bonjour le monde !</string>
     <string name="noProject">Aucun projet trouvé. Veuillez choisir un projet dans HearThis Desktop et le synchroniser à l\'aide du bouton Synchroniser.</string>
     <string name="no_use_without_record">Ce programme ne peut pas enregistrer de son à moins que vous ne lui en donniez l\'autorisation.</string>
+    <string name="cannot_start_recording">Impossible de démarrer l\'enregistrement : aucun emplacement où l\'enregistrer.</string>
     <string name="record_for_volume">HearThis souhaite enregistrer l\'audio pour afficher votre niveau sonore afin que vous puissiez le vérifier avant l\'enregistrement.</string>
     <string name="notification_for_sync">HearThis doit afficher une notification pour que vous sachiez que la synchronisation est en cours et pour empêcher le système de l\'interrompre.</string>
     <string name="need_permissions">Autorisation requise</string>

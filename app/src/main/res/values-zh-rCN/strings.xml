@@ -28,6 +28,7 @@
     <string name="hello_world">你好，世界！</string>
     <string name="noProject">未找到项目。请在 HearThis Desktop 中选择一个项目，然后使用“同步”按钮进行同步。</string>
     <string name="no_use_without_record">除非您授予录音权限，否则此程序无法录制声音。</string>
+    <string name="cannot_start_recording">无法开始录音：没有保存录音的位置。</string>
     <string name="record_for_volume">HearThis 希望录制音频以显示您的音量级别，以便您在录音前进行检查。</string>
     <string name="notification_for_sync">HearThis 需要显示通知，以便您了解同步正在运行并防止系统中断同步。</string>
     <string name="need_permissions">需要权限</string>

@@ -349,7 +349,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		if (_recordingFilePath == null) {
 			Log.e("Recorder","Error, _recordingFilePath is null [1]");
-			recordButton.setWaiting(false);
+			waveRecorder.release();
+			waveRecorder = null;
+			abortRecordingStart();
 			synchronized (startingLock) {
 				starting = false;
 				startingLock.notifyAll();
@@ -372,6 +374,16 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			starting = false;
 			startingLock.notifyAll();
 		}
+	}
+
+	// Called when we can't start recording (e.g., no file to record to): put the button back
+	// to normal and tell the user, rather than failing silently. May be called off the UI thread.
+	private void abortRecordingStart() {
+		runOnUiThread(() -> {
+			recordButton.setWaiting(false);
+			recordButton.setButtonState(BtnState.Normal);
+			Toast.makeText(this, R.string.cannot_start_recording, Toast.LENGTH_LONG).show();
+		});
 	}
 
 	void startRecording() {
@@ -412,6 +424,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 		if (_recordingFilePath == null) {
 			Log.e("Recorder","Error, _recordingFilePath is null [2]");
+			recorder.release();
+			recorder = null;
+			abortRecordingStart();
 			return;
 		}
 		File file = new File(_recordingFilePath);
@@ -504,6 +519,11 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 		recordButton.setButtonState(BtnState.Normal);
 		recordButton.setWaiting(false);
+		if (useWaveRecorder ? waveRecorder == null : recorder == null) {
+			// Recording never started (see abortRecordingStart), so there is nothing to stop and
+			// no point reporting that the press was too short.
+			return;
+		}
 		if (useWaveRecorder && waveRecorder != null)  {
 			waveRecorder.stop();
 			startMonitoring();

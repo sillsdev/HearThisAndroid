@@ -28,6 +28,7 @@
     <string name="hello_world">¡Hola mundo!</string>
     <string name="noProject">No se encontraron proyectos. Por favor, elija un proyecto en HearThis Desktop y sincronícelo usando el botón Sincronizar.</string>
     <string name="no_use_without_record">Este programa no puede grabar sonido a menos que le conceda permiso para hacerlo.</string>
+    <string name="cannot_start_recording">No se puede iniciar la grabación: no hay ubicación para guardarla.</string>
     <string name="record_for_volume">HearThis desea grabar audio para mostrar su nivel de sonido y que pueda comprobarlo antes de grabar.</string>
     <string name="notification_for_sync">HearThis necesita mostrar una notificación para que sepa que la sincronización se está ejecutando y para evitar que el sistema la interrumpa.</string>
     <string name="need_permissions">Se requiere permiso</string>

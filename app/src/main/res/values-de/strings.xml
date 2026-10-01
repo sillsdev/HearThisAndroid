@@ -28,6 +28,7 @@
     <string name="hello_world">Hallo Welt!</string>
     <string name="noProject">Keine Projekte gefunden. Bitte wählen Sie ein Projekt in HearThis Desktop und synchronisieren Sie es über die Schaltfläche „Synchronisieren“.</string>
     <string name="no_use_without_record">Dieses Programm kann keinen Ton aufnehmen, außer Sie erteilen ihm die Erlaubnis dazu.</string>
+    <string name="cannot_start_recording">Aufnahme kann nicht gestartet werden: Kein Speicherort für die Aufnahme.</string>
     <string name="record_for_volume">HearThis möchte Audio aufnehmen, um Ihren Schallpegel anzuzeigen, damit Sie ihn vor der Aufnahme überprüfen können.</string>
     <string name="notification_for_sync">HearThis muss eine Benachrichtigung anzeigen, damit Sie wissen, dass die Synchronisierung läuft und um zu verhindern, dass das System sie unterbricht.</string>
     <string name="need_permissions">Berechtigung erforderlich</string>
