@@ -142,6 +142,13 @@ public class AcceptFileHandlerTest {
     }
 
     @Test
+    public void handle_success_doesNotReportFailure() throws Exception {
+        try (Response ignored = handler.handle(createSession("ok.txt", new byte[]{1}))) {
+            assertNull(mockListener.failedFileName);
+        }
+    }
+
+    @Test
     public void handle_missingPathParameter_returnsBadRequest() throws Exception {
         try (Response response = handler.handle(createSession(null, new byte[]{1}))) {
             assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
@@ -191,25 +198,25 @@ public class AcceptFileHandlerTest {
     // ---- Content-Length handling ----
 
     @Test
-    public void handle_missingContentLength_returnsBadRequest() throws Exception {
+    public void handle_missingContentLength_returnsLengthRequired() throws Exception {
         try (Response response = handler.handle(createSession("a.txt", new byte[]{1}, null))) {
-            assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
+            assertEquals(411, response.getStatus().getRequestStatus());
             assertFalse(new File(baseDir, "a.txt").exists());
         }
     }
 
     @Test
-    public void handle_nonNumericContentLength_returnsBadRequest() throws Exception {
+    public void handle_nonNumericContentLength_returnsLengthRequired() throws Exception {
         try (Response response = handler.handle(createSession("a.txt", new byte[]{1}, "abc"))) {
-            assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
+            assertEquals(411, response.getStatus().getRequestStatus());
             assertFalse(new File(baseDir, "a.txt").exists());
         }
     }
 
     @Test
-    public void handle_negativeContentLength_returnsBadRequest() throws Exception {
+    public void handle_negativeContentLength_returnsLengthRequired() throws Exception {
         try (Response response = handler.handle(createSession("a.txt", new byte[]{1}, "-5"))) {
-            assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
+            assertEquals(411, response.getStatus().getRequestStatus());
             assertFalse(new File(baseDir, "a.txt").exists());
         }
     }
@@ -259,6 +266,8 @@ public class AcceptFileHandlerTest {
             assertEquals(Response.Status.INTERNAL_ERROR, response.getStatus());
             assertFalse("Truncated file must not be left in place", new File(baseDir, "ProjectA/1.wav").exists());
             assertNoPartFiles();
+            assertEquals("ProjectA/1.wav", mockListener.receivedFileName);
+            assertEquals("Listener should be told the receive failed", "ProjectA/1.wav", mockListener.failedFileName);
         }
     }
 
@@ -386,9 +395,15 @@ public class AcceptFileHandlerTest {
 
     private static class TestFileReceivedNotification implements AcceptFileHandler.IFileReceivedNotification {
         String receivedFileName;
+        String failedFileName;
         @Override
         public void receivingFile(String name) {
             receivedFileName = name;
+        }
+
+        @Override
+        public void receiveFailed(String name) {
+            failedFileName = name;
         }
     }
 }

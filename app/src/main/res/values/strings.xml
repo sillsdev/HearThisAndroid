@@ -37,6 +37,7 @@
     <string name="record_too_short">Hold down the record button while talking, and only let it go when you\'re done.</string>
     <string name="sync_service_channel_name">Sync Service Channel</string>
     <string name="receiving_file">receiving %1$s</string>
+    <string name="receive_failed">failed to receive %1$s</string>
     <string name="sending_file">sending %1$s</string>
     <string name="ip_error">Something Wrong! %1$s</string>
 

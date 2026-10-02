@@ -37,6 +37,7 @@
     <string name="record_too_short">说话时请按住录音按钮，只有在完成后才松开。</string>
     <string name="sync_service_channel_name">同步服务频道</string>
     <string name="receiving_file">正在接收 %1$s</string>
+    <string name="receive_failed">接收 %1$s 失败</string>
     <string name="sending_file">正在发送 %1$s</string>
     <string name="ip_error">出错了！%1$s</string>
 

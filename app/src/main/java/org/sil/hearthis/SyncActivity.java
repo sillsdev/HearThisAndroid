@@ -372,6 +372,12 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     }
 
     @Override
+    public void receiveFailed(String path) {
+        Log.e(TAG, "File receive failed: " + path);
+        runOnUiThread(() -> progressView.setText(getString(R.string.receive_failed, path)));
+    }
+
+    @Override
     public void sendingFile(String path) {
         Log.d(TAG, "File sent: " + path);
         runOnUiThread(() -> progressView.setText(getString(R.string.sending_file, path)));

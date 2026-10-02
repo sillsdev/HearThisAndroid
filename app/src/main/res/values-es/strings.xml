@@ -37,6 +37,7 @@
     <string name="record_too_short">Mantenga pulsado el botón de grabación mientras habla, y suéltelo solo cuando haya terminado.</string>
     <string name="sync_service_channel_name">Canal del servicio de sincronización</string>
     <string name="receiving_file">recibiendo %1$s</string>
+    <string name="receive_failed">error al recibir %1$s</string>
     <string name="sending_file">enviando %1$s</string>
     <string name="ip_error">¡Algo salió mal! %1$s</string>
 

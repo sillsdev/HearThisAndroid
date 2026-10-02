@@ -31,6 +31,18 @@ public class AcceptFileHandler {
         }
     };
 
+    private static final Response.IStatus LENGTH_REQUIRED = new Response.IStatus() {
+        @Override
+        public int getRequestStatus() {
+            return 411;
+        }
+
+        @Override
+        public String getDescription() {
+            return "411 Length Required";
+        }
+    };
+
     private final Context _parent;
     private IFileReceivedNotification listener;
 
@@ -75,7 +87,9 @@ public class AcceptFileHandler {
             contentLength = -1;
         }
         if (contentLength < 0) {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing or invalid Content-Length");
+            // Chunked uploads (no Content-Length) are not supported: the body is read raw from the
+            // socket, and the sender (HearThis) always sends a Content-Length.
+            return NanoHTTPD.newFixedLengthResponse(LENGTH_REQUIRED, NanoHTTPD.MIME_PLAINTEXT, "Missing or invalid Content-Length");
         }
         if (contentLength > MAX_UPLOAD_BYTES) {
             return NanoHTTPD.newFixedLengthResponse(PAYLOAD_TOO_LARGE, NanoHTTPD.MIME_PLAINTEXT, "File too large");
@@ -112,6 +126,9 @@ public class AcceptFileHandler {
             if (temp.exists() && !temp.delete()) {
                 Log.e(TAG, "Failed to delete partial file: " + temp.getAbsolutePath());
             }
+            if (listener != null) {
+                listener.receiveFailed(filePath);
+            }
             return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "failure: " + e.getMessage());
         }
         return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, "success");
@@ -131,7 +148,12 @@ public class AcceptFileHandler {
     }
 
     public interface IFileReceivedNotification {
+        /** Called when a file starts arriving (before it is known to succeed). */
         void receivingFile(String name);
+
+        /** Called when a file that was announced with receivingFile could not be saved. */
+        default void receiveFailed(String name) {
+        }
     }
 
     public void setListener(IFileReceivedNotification newListener) {

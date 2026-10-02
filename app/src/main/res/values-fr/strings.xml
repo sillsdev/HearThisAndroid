@@ -37,6 +37,7 @@
     <string name="record_too_short">Maintenez le bouton d\'enregistrement enfoncé pendant que vous parlez, et ne le relâchez que lorsque vous avez terminé.</string>
     <string name="sync_service_channel_name">Canal du service de synchronisation</string>
     <string name="receiving_file">réception de %1$s</string>
+    <string name="receive_failed">échec de la réception de %1$s</string>
     <string name="sending_file">envoi de %1$s</string>
     <string name="ip_error">Un problema est survenu ! %1$s</string>
 

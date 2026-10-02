@@ -37,6 +37,7 @@
     <string name="record_too_short">Halten Sie die Aufnahmetaste gedrückt, während Sie sprechen, und lassen Sie sie erst los, wenn Sie fertig sind.</string>
     <string name="sync_service_channel_name">Synchronisierungsdienst-Kanal</string>
     <string name="receiving_file">%1$s wird empfangen</string>
+    <string name="receive_failed">%1$s konnte nicht empfangen werden</string>
     <string name="sending_file">%1$s wird gesendet</string>
     <string name="ip_error">Etwas ist schief gelaufen! %1$s</string>
 
