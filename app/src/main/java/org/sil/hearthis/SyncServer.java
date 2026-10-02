@@ -2,7 +2,9 @@ package org.sil.hearthis;
 
 import android.util.Log;
 import java.io.IOException;
+import java.util.Map;
 import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.Response;
 
 /**
  * SyncServer manages the 'web server' for the synchronization service that supports data
@@ -80,10 +82,47 @@ public class SyncServer extends NanoHTTPD {
         } else {
             response = deviceNameHandler.handle(session);
         }
-        // Handlers may return early without consuming the request body, which would corrupt a
-        // kept-alive connection. .NET's WebClient reuses connections by default and throws
-        // "A connection that was expected to be kept alive was closed by the server".
-        response.addHeader("Connection", "close");
+        if (shouldCloseConnection(session.getHeaders(), uri, response)) {
+            response.addHeader("Connection", "close");
+        }
         return response;
+    }
+
+    /**
+     * Decides whether to close the connection after this response.
+     * A request that carries a body which the handler did not read to the end would leave that
+     * body in the socket, where NanoHTTPD would parse it as the start of the next request on a
+     * kept-alive connection. In that case we must close. .NET's WebClient reuses connections by
+     * default and throws "A connection that was expected to be kept alive was closed by the
+     * server" if we close when it didn't expect it, so we keep the connection alive whenever it is
+     * safe: for requests without a body, and for a /putfile that was received completely.
+     */
+    static boolean shouldCloseConnection(Map<String, String> requestHeaders, String uri, Response response) {
+        if (!requestHasBody(requestHeaders)) {
+            return false;
+        }
+        if (requestHeaders.containsKey("transfer-encoding")) {
+            return true; // chunked bodies are never read by our handlers
+        }
+        boolean bodyFullyRead = uri.startsWith("/putfile") && response.getStatus() == Response.Status.OK;
+        return !bodyFullyRead;
+    }
+
+    private static boolean requestHasBody(Map<String, String> headers) {
+        if (headers == null) {
+            return false;
+        }
+        if (headers.containsKey("transfer-encoding")) {
+            return true;
+        }
+        String length = headers.get("content-length");
+        if (length == null) {
+            return false;
+        }
+        try {
+            return Long.parseLong(length.trim()) > 0;
+        } catch (NumberFormatException e) {
+            return true; // can't tell, so be safe
+        }
     }
 }
