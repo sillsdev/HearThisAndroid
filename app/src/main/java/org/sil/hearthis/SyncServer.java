@@ -2,6 +2,9 @@ package org.sil.hearthis;
 
 import android.util.Log;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response;
@@ -31,6 +34,20 @@ public class SyncServer extends NanoHTTPD {
         acceptFileHandler = new AcceptFileHandler(_parent);
         listDirectoryHandler = new ListDirectoryHandler(_parent);
         acceptNotificationHandler = new AcceptNotificationHandler();
+    }
+
+    /**
+     * With keep-alive, small responses (headers, then body) on a reused connection can stall on
+     * the Nagle / delayed-ACK interaction, so disable Nagle's algorithm on accepted sockets.
+     */
+    @Override
+    protected ClientHandler createClientHandler(Socket finalAccept, InputStream inputStream) {
+        try {
+            finalAccept.setTcpNoDelay(true);
+        } catch (SocketException e) {
+            Log.w(TAG, "Could not set TCP_NODELAY", e);
+        }
+        return super.createClientHandler(finalAccept, inputStream);
     }
 
     public RequestFileHandler getRequestFileHandler() {
