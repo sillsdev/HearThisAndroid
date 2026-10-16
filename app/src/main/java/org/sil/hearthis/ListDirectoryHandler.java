@@ -38,7 +38,12 @@ public class ListDirectoryHandler {
         // Fix Path Traversal Vulnerability
         File file = new File(baseDir, filePath);
         try {
-            if (!file.getCanonicalPath().startsWith(baseDir.getCanonicalPath())) {
+            String canonicalBase = baseDir.getCanonicalPath();
+            String canonicalRequested = file.getCanonicalPath();
+            // Require a separator after the base so a sibling like "<base>-evil" doesn't match;
+            // the base itself (empty path) is allowed.
+            if (!canonicalRequested.equals(canonicalBase)
+                    && !canonicalRequested.startsWith(canonicalBase + File.separator)) {
                 Log.w(TAG, "Attempted path traversal: " + filePath);
                 return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "Access denied");
             }
