@@ -6,6 +6,8 @@ import script.IScriptProvider;
 import android.content.Context;
 import android.util.AttributeSet;
 
+import java.util.Locale;
+
 public class BookButton  extends ProgressButton {
 
 	public BookInfo Model;
@@ -86,10 +88,10 @@ public class BookButton  extends ProgressButton {
         char first = Model.Abbr.charAt(0);
         String abbr = Model.Abbr;
         if (first >= '0' && first <= '9') {
-        	abbr = abbr.charAt(0) + abbr.substring(1,2).toUpperCase() + abbr.substring(2);
+        	abbr = abbr.charAt(0) + abbr.substring(1,2).toUpperCase(Locale.getDefault()) + abbr.substring(2);
         }
         else {
-        	abbr = abbr.substring(0,1).toUpperCase() + abbr.substring(1);
+        	abbr = abbr.substring(0,1).toUpperCase(Locale.getDefault()) + abbr.substring(1);
         }
         return abbr;
     }
