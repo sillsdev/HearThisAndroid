@@ -32,7 +32,7 @@ import fi.iki.elonen.NanoHTTPD.Response;
  * Unit tests for ListDirectoryHandler, focused on path traversal protection.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 34)
+@Config(sdk = 36)
 public class ListDirectoryHandlerTest {
 
     @Rule

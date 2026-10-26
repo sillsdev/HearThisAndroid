@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config;
  * Unit tests for the lenient number parsing used by FloatPreference.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 34)
+@Config(sdk = 36)
 public class FloatPreferenceTest {
 
     @Test

@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config;
  * if the environment can't provide the R.color values.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 34)
+@Config(sdk = 36)
 public class LevelMeterViewTest {
 
     private LevelMeterView levelMeterView;

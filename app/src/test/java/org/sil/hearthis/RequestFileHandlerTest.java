@@ -32,7 +32,7 @@ import fi.iki.elonen.NanoHTTPD.Response;
  * Unit tests for RequestFileHandler, focused on path traversal protection.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 34)
+@Config(sdk = 36)
 public class RequestFileHandlerTest {
 
     @Rule
