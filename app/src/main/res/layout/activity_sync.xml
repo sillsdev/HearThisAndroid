@@ -1,5 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sync_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingLeft="@dimen/activity_horizontal_margin"
@@ -48,15 +50,14 @@
         android:layout_centerHorizontal="true"
         android:layout_below = "@+id/progress"
         android:text="@string/continue_button_caption" />
-    <SurfaceView
-        android:id="@+id/surface_view"
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview_view"
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_below = "@+id/continue_button"
         android:layout_marginTop="20dp"
         android:layout_marginHorizontal="40dp"
         android:layout_alignParentBottom="true"
-
         />
 
 </RelativeLayout>

@@ -1,114 +1,145 @@
 package org.sil.hearthis;
 
-import org.apache.http.HttpException;
-import org.apache.http.impl.DefaultConnectionReuseStrategy;
-import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.impl.DefaultHttpServerConnection;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.BasicHttpProcessor;
-import org.apache.http.protocol.HttpRequestHandlerRegistry;
-import org.apache.http.protocol.HttpService;
-import org.apache.http.protocol.ResponseConnControl;
-import org.apache.http.protocol.ResponseContent;
-import org.apache.http.protocol.ResponseDate;
-import org.apache.http.protocol.ResponseServer;
-
+import android.util.Log;
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.Map;
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.Response;
 
 /**
  * SyncServer manages the 'web server' for the synchronization service that supports data
  * exchange with HearThis desktop.
- * This is using classes like BasicHttpProcessor from org.apache.http with is considered obsolete.
- * However, there is no obvious replacement I can find for it in connection with making a
- * web server. For now, I've been able to keep it working at least as far as Android 12
- * by adding "useLibrary 'org.apache.http.legacy'" to build.gradle and (later) a uses-library
- * declaration to AndroidManifext.xml. The editor seems to think this file will not compile, even so,
- * but somehow it actually does.
+ * This is now using NanoHTTPD as the underlying server.
  */
-public class SyncServer extends Thread {
-    SyncService _parent;
-    Integer _serverPort = 8087;
-    private BasicHttpProcessor httpproc = null;
-    private BasicHttpContext httpContext = null;
-    private HttpService httpService = null;
-    private HttpRequestHandlerRegistry registry = null;
-    boolean _running;
+public class SyncServer extends NanoHTTPD {
+    private static final String TAG = "SyncServer";
+    final SyncService _parent;
+    static final int SERVER_PORT = 8087;
 
-    public SyncServer(SyncService parent)
-    {
-        super("HearThisAndroidServer");
+    private final DeviceNameHandler deviceNameHandler;
+    private final RequestFileHandler requestFileHandler;
+    private final AcceptFileHandler acceptFileHandler;
+    private final ListDirectoryHandler listDirectoryHandler;
+    private final AcceptNotificationHandler acceptNotificationHandler;
+
+    public SyncServer(SyncService parent) {
+        super(SERVER_PORT);
         _parent = parent;
 
-        httpproc = new BasicHttpProcessor();
-        httpContext = new BasicHttpContext();
-
-        httpproc.addInterceptor(new ResponseDate());
-        httpproc.addInterceptor(new ResponseServer());
-        httpproc.addInterceptor(new ResponseContent());
-        httpproc.addInterceptor(new ResponseConnControl());
-
-        httpService = new HttpService(httpproc,
-                new DefaultConnectionReuseStrategy(),
-                new DefaultHttpResponseFactory());
-
-
-        registry = new HttpRequestHandlerRegistry();
-
-        registry.register("*", new DeviceNameHandler(_parent));
-        registry.register("/getfile*", new RequestFileHandler(_parent));
-        registry.register("/putfile*", new AcceptFileHandler(_parent));
-        registry.register("/list*", new ListDirectoryHandler(_parent));
-        registry.register("/notify*", new AcceptNotificationHandler());
-        httpService.setHandlerResolver(registry);
-    }
-    public synchronized void startThread() {
-        if (_running)
-            return; // already started, must not do twice.
-        _running = true;
-
-        super.start();
+        deviceNameHandler = new DeviceNameHandler(_parent);
+        requestFileHandler = new RequestFileHandler(_parent);
+        acceptFileHandler = new AcceptFileHandler(_parent);
+        listDirectoryHandler = new ListDirectoryHandler(_parent);
+        acceptNotificationHandler = new AcceptNotificationHandler();
     }
 
-    // Clear flag so main loop will terminate after next request.
-    public synchronized void stopThread(){
-        _running = false;
-    }
-
-    // Method executed in thread when super.start() is called.
+    /**
+     * With keep-alive, small responses (headers, then body) on a reused connection can stall on
+     * the Nagle / delayed-ACK interaction, so disable Nagle's algorithm on accepted sockets.
+     */
     @Override
-    public void run() {
-        super.run();
-
+    protected ClientHandler createClientHandler(Socket finalAccept, InputStream inputStream) {
         try {
-            ServerSocket serverSocket = new ServerSocket(_serverPort);
-
-            serverSocket.setReuseAddress(true);
-
-            while(_running){
-                try {
-                    final Socket socket = serverSocket.accept();
-
-                    DefaultHttpServerConnection serverConnection = new DefaultHttpServerConnection();
-
-                    serverConnection.bind(socket, new BasicHttpParams());
-
-                    httpService.handleRequest(serverConnection, httpContext);
-
-                    serverConnection.shutdown();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (HttpException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            serverSocket.close();
+            finalAccept.setTcpNoDelay(true);
+        } catch (SocketException e) {
+            Log.w(TAG, "Could not set TCP_NODELAY", e);
         }
-        catch (IOException e) {
-            e.printStackTrace();
+        return super.createClientHandler(finalAccept, inputStream);
+    }
+
+    public RequestFileHandler getRequestFileHandler() {
+        return requestFileHandler;
+    }
+
+    public AcceptFileHandler getAcceptFileHandler() {
+        return acceptFileHandler;
+    }
+
+    public AcceptNotificationHandler getAcceptNotificationHandler() {
+        return acceptNotificationHandler;
+    }
+
+    public synchronized void startThread() {
+        if (wasStarted() && isAlive()) {
+            Log.d(TAG, "Server already running.");
+            return;
+        }
+        try {
+            start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+            Log.d(TAG, "Server started on port " + SERVER_PORT);
+        } catch (IOException e) {
+            Log.e(TAG, "Could not start server", e);
+        }
+    }
+
+    public synchronized void stopThread() {
+        if (wasStarted()) {
+            stop();
+            Log.d(TAG, "Server stopped");
+        }
+    }
+
+    @Override
+    public Response serve(IHTTPSession session) {
+        String uri = session.getUri();
+        Log.d(TAG, "Serving URI: " + uri);
+
+        Response response;
+        if (uri.startsWith("/getfile")) {
+            response = requestFileHandler.handle(session);
+        } else if (uri.startsWith("/putfile")) {
+            response = acceptFileHandler.handle(session);
+        } else if (uri.startsWith("/list")) {
+            response = listDirectoryHandler.handle(session);
+        } else if (uri.startsWith("/notify")) {
+            response = acceptNotificationHandler.handle(session);
+        } else {
+            response = deviceNameHandler.handle(session);
+        }
+        if (shouldCloseConnection(session.getHeaders(), uri, response)) {
+            response.addHeader("Connection", "close");
+        }
+        return response;
+    }
+
+    /**
+     * Decides whether to close the connection after this response.
+     * A request that carries a body which the handler did not read to the end would leave that
+     * body in the socket, where NanoHTTPD would parse it as the start of the next request on a
+     * kept-alive connection. In that case we must close. .NET's WebClient reuses connections by
+     * default and throws "A connection that was expected to be kept alive was closed by the
+     * server" if we close when it didn't expect it, so we keep the connection alive whenever it is
+     * safe: for requests without a body, and for a /putfile that was received completely.
+     */
+    static boolean shouldCloseConnection(Map<String, String> requestHeaders, String uri, Response response) {
+        if (!requestHasBody(requestHeaders)) {
+            return false;
+        }
+        if (requestHeaders.containsKey("transfer-encoding")) {
+            return true; // chunked bodies are never read by our handlers
+        }
+        boolean bodyFullyRead = uri.startsWith("/putfile") && response.getStatus() == Response.Status.OK;
+        return !bodyFullyRead;
+    }
+
+    private static boolean requestHasBody(Map<String, String> headers) {
+        if (headers == null) {
+            return false;
+        }
+        if (headers.containsKey("transfer-encoding")) {
+            return true;
+        }
+        String length = headers.get("content-length");
+        if (length == null) {
+            return false;
+        }
+        try {
+            return Long.parseLong(length.trim()) > 0;
+        } catch (NumberFormatException e) {
+            return true; // can't tell, so be safe
         }
     }
 }

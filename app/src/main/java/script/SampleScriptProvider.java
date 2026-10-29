@@ -1,8 +1,8 @@
-package Script;
+package script;
 
 public class SampleScriptProvider implements IScriptProvider {
 
-	BibleStats _stats;
+	final BibleStats _stats;
 	
 	public SampleScriptProvider() {
 		_stats = new BibleStats();
@@ -18,7 +18,7 @@ public class SampleScriptProvider implements IScriptProvider {
 
 	@Override
 	public int GetScriptLineCount(int bookNumber, int chapter1Based) {
-		return _stats.Books.get(bookNumber).VersesPerChapter[chapter1Based];
+		return _stats.Books.get(bookNumber).VersesPerChapter()[chapter1Based];
 	}
 
 	@Override

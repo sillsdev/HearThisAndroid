@@ -3,27 +3,51 @@ package org.sil.hearthis;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import Script.BookInfo;
-import Script.IScriptProvider;
-import Script.Project;
+import java.util.Objects;
+
+import script.BookInfo;
+import script.IScriptProvider;
+import script.Project;
 
 
 public class ChooseBookActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        EdgeToEdge.enable(this);
+        // Explicitly set dark icons for the white status bar when edge-to-edge is enabled
+        new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
+                .setAppearanceLightStatusBars(false);
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_book);
+
+        View mainLayout = findViewById(R.id.main);
+        if (mainLayout != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainLayout, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
+
         IScriptProvider scripture = ServiceLocator.getServiceLocator().init(this).getScriptProvider();
         Project project = new Project("Sample", scripture);
-        getSupportActionBar().setTitle(R.string.choose_book);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.choose_book);
         setProject(project);
     }
 
@@ -51,7 +75,7 @@ public class ChooseBookActivity extends AppCompatActivity {
 
     public void setProject(Project project) {
         LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        ViewGroup bookFlow = (ViewGroup) findViewById(R.id.booksFlow);
+        ViewGroup bookFlow = findViewById(R.id.booksFlow);
         for (BookInfo book : project.Books) {
             int resid = R.layout.book_button;
             if (book.BookNumber == 39) {
@@ -75,14 +99,10 @@ public class ChooseBookActivity extends AppCompatActivity {
         }
     }
 
-    public android.view.View.OnClickListener bookButtonListener = new android.view.View.OnClickListener() {
-
-        @Override
-        public void onClick(View v) {
+    public final View.OnClickListener bookButtonListener = v -> {
             BookInfo book = (BookInfo)v.getTag();
             Intent chooseChapter = new Intent(ChooseBookActivity.this, ChooseChapterActivity.class);
             chooseChapter.putExtra("bookInfo", book);
             startActivity(chooseChapter);
-        }
     };
 }

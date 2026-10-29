@@ -1,4 +1,4 @@
-package Script;
+package script;
 
 // Used to record the current location where we are recording
 public class BibleLocation {

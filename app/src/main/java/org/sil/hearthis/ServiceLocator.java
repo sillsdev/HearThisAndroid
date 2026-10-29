@@ -2,15 +2,14 @@ package org.sil.hearthis;
 
 import android.app.Activity;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.Objects;
 
-import Script.FileSystem;
-import Script.IFileSystem;
-import Script.IScriptProvider;
-import Script.Project;
-import Script.RealFileSystem;
-import Script.RealScriptProvider;
+import script.FileSystem;
+import script.IScriptProvider;
+import script.Project;
+import script.RealFileSystem;
+import script.RealScriptProvider;
 
 /**
  * This class facilitates locating the instance that should be used of various services.
@@ -33,7 +32,7 @@ public class ServiceLocator {
     // Returns this for convenient chaining.
     public ServiceLocator init(Activity activity) {
         if (externalFilesDirectory == null)
-            externalFilesDirectory = activity.getExternalFilesDir(null).toString();
+            externalFilesDirectory = Objects.requireNonNull(activity.getExternalFilesDir(null)).toString();
         return this;
     }
 

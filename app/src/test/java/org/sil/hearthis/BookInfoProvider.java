@@ -1,6 +1,6 @@
 package org.sil.hearthis;
 
-import Script.BookInfo;
+import script.BookInfo;
 
 /**
  * This class supports creating a BookInfo in a suitable default state for testing.

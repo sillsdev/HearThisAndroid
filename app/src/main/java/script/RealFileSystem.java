@@ -1,4 +1,6 @@
-package Script;
+package script;
+
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Implement interface to talk to the real file system on the device.
@@ -28,15 +31,26 @@ public class RealFileSystem implements IFileSystem {
     }
 
     @Override
-    public void Delete(String path) {
-        new File(path).delete();
+    public void Delete(String path) {File file = new File(path);
+        if (file.exists() && !file.delete()) {
+            Log.w("RealFileSystem", "Failed to delete file at: " + path);
+        }
     }
 
     @Override
     public ArrayList<String> getDirectories(String path) {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
+        if (path == null) {
+            return result;
+        }
+
         File directory = new File(path);
-        for (File file : directory.listFiles()){
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
             if (file.isDirectory()) {
                 result.add(file.getPath());
             }

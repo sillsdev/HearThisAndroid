@@ -1,4 +1,4 @@
-package Script;
+package script;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
@@ -16,7 +17,7 @@ import java.util.ArrayList;
  */
 public class FileSystem implements IFileSystem {
 
-    IFileSystem core;
+    final IFileSystem core;
     public FileSystem(IFileSystem core) {
         this.core = core;
     }
@@ -47,11 +48,11 @@ public class FileSystem implements IFileSystem {
     }
 
     public String getFile(String path) throws IOException {
-        BufferedReader reader = new BufferedReader( new InputStreamReader(ReadFile(path),"UTF-8"));
+        BufferedReader reader = new BufferedReader( new InputStreamReader(ReadFile(path), StandardCharsets.UTF_8));
         StringBuilder stringBuilder = new StringBuilder();
         try {
             String line = reader.readLine();
-            String ls = System.getProperty("line.separator");
+            String ls = System.lineSeparator();
 
             if (line != null)
                 stringBuilder.append(line);
@@ -68,16 +69,8 @@ public class FileSystem implements IFileSystem {
     }
 
     public void putFile(String path, String content) throws IOException {
-        BufferedWriter writer = null;
-        try
-        {
-            writer = new BufferedWriter(new OutputStreamWriter(WriteFile(path),"UTF-8"));
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(WriteFile(path), StandardCharsets.UTF_8))) {
             writer.write(content);
-        }
-        finally
-        {
-            if (writer != null)
-                writer.close( );
         }
     }
 }

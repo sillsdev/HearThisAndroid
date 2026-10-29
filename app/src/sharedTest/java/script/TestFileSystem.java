@@ -1,4 +1,7 @@
-package Script;
+package script;
+
+import android.os.Build;
+import android.util.Log;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -18,7 +21,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -29,8 +31,8 @@ import javax.xml.transform.stream.StreamResult;
  */
 public class TestFileSystem implements IFileSystem {
 
-    HashMap<String, String> files = new HashMap<String, String>();
-    HashSet<String> directories = new HashSet<String>();
+    final HashMap<String, String> files = new HashMap<>();
+    final HashSet<String> directories = new HashSet<>();
 
     public String externalFilesDirectory = "root";
 
@@ -42,72 +44,74 @@ public class TestFileSystem implements IFileSystem {
     public String getInfoTxtPath() { return getProjectDirectory() + "/info.txt";}
 
     public String getDefaultInfoTxtContent() {
-        return "Genesis;\n" +
-                "Exodus;\n" +
-                "Leviticus;\n" +
-                "Numbers;\n" +
-                "Deuteronomy;\n" +
-                "Joshua;\n" +
-                "Judges;\n" +
-                "Ruth;\n" +
-                "1 Samuel;\n" +
-                "2 Samuel;\n" +
-                "1 Kings;\n" +
-                "2 Kings;\n" +
-                "1 Chronicles;\n" +
-                "2 Chronicles;\n" +
-                "Ezra;\n" +
-                "Nehemiah;\n" +
-                "Esther;\n" +
-                "Job;\n" +
-                "Psalms;\n" +
-                "Proverbs;\n" +
-                "Ecclesiastes;\n" +
-                "Song of Songs;\n" +
-                "Isaiah;\n" +
-                "Jeremiah;\n" +
-                "Lamentations;\n" +
-                "Ezekiel;\n" +
-                "Daniel;\n" +
-                "Hosea;\n" +
-                "Joel;\n" +
-                "Amos;\n" +
-                "Obadiah;\n" +
-                "Jonah;\n" +
-                "Micah;\n" +
-                "Nahum;\n" +
-                "Habakkuk;\n" +
-                "Zephaniah;\n" +
-                "Haggai;\n" +
-                "Zechariah;\n" +
-                "Malachi;\n" +
-                "Matthew;1:1,12:6,25:12,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0\n" +
-                "Mark;\n" +
-                "Luke;\n" +
-                "John;\n" +
-                "Acts;\n" +
-                "Romans;\n" +
-                "1 Corinthians;\n" +
-                "2 Corinthians;\n" +
-                "Galatians;\n" +
-                "Ephesians;\n" +
-                "Philippians;\n" +
-                "Colossians;\n" +
-                "1 Thessalonians;\n" +
-                "2 Thessalonians;\n" +
-                "1 Timothy;\n" +
-                "2 Timothy;\n" +
-                "Titus;\n" +
-                "Philemon;\n" +
-                "Hebrews;\n" +
-                "James;\n" +
-                "1 Peter;\n" +
-                "2 Peter;\n" +
-                "1 John;\n" +
-                "2 John;\n" +
-                "3 John;\n" +
-                "Jude;\n" +
-                "Revelation;\n";
+        return """
+                Genesis;
+                Exodus;
+                Leviticus;
+                Numbers;
+                Deuteronomy;
+                Joshua;
+                Judges;
+                Ruth;
+                1 Samuel;
+                2 Samuel;
+                1 Kings;
+                2 Kings;
+                1 Chronicles;
+                2 Chronicles;
+                Ezra;
+                Nehemiah;
+                Esther;
+                Job;
+                Psalms;
+                Proverbs;
+                Ecclesiastes;
+                Song of Songs;
+                Isaiah;
+                Jeremiah;
+                Lamentations;
+                Ezekiel;
+                Daniel;
+                Hosea;
+                Joel;
+                Amos;
+                Obadiah;
+                Jonah;
+                Micah;
+                Nahum;
+                Habakkuk;
+                Zephaniah;
+                Haggai;
+                Zechariah;
+                Malachi;
+                Matthew;1:1,12:6,25:12,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0,0:0
+                Mark;
+                Luke;
+                John;
+                Acts;
+                Romans;
+                1 Corinthians;
+                2 Corinthians;
+                Galatians;
+                Ephesians;
+                Philippians;
+                Colossians;
+                1 Thessalonians;
+                2 Thessalonians;
+                1 Timothy;
+                2 Timothy;
+                Titus;
+                Philemon;
+                Hebrews;
+                James;
+                1 Peter;
+                2 Peter;
+                1 John;
+                2 John;
+                3 John;
+                Jude;
+                Revelation;
+                """;
     }
 
     @Override
@@ -118,15 +122,18 @@ public class TestFileSystem implements IFileSystem {
     public void simulateFile(String path, String content) {
         files.put(path, content);
     }
+    @SuppressWarnings("unused")
+    // Method is used in another file
     public void SimulateDirectory(String path) {
         directories.add(path);
     }
 
     @Override
-    public InputStream ReadFile(String path) throws FileNotFoundException {
+    public InputStream ReadFile(String path) {
         String content = files.get(path);
         // This is not supported by the minimum Android version I'm targeting,
         // but this code only has to work for testing.
+        assert content != null;
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -150,7 +157,7 @@ public class TestFileSystem implements IFileSystem {
 
     @Override
     public ArrayList<String> getDirectories(String path) {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         for(String d : directories) {
             if (d.startsWith(path)) {
                 // Enhance: if we need to deal with hierarchy, we'll need to find the next slash,
@@ -161,12 +168,11 @@ public class TestFileSystem implements IFileSystem {
         return result;
     }
 
-    Element MakeElement(Document doc, Element parent, String name, String content) {
+    void MakeElement(Document doc, Element parent, String name, String content) {
         Element result = doc.createElement(name);
         parent.appendChild(result);
         result.setTextContent(content);
-        return result;
-    }
+        }
 
     // Make a simulated info.txt file for the specified chapter. Contents are the specified lines.
     // It also has recording elements for those recordingTexts which are non-null. It is OK to have
@@ -213,23 +219,15 @@ public class TestFileSystem implements IFileSystem {
             transformer.transform(domSource, streamResult);
             fos.flush();
             fos.close();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TransformerConfigurationException e) {
-            e.printStackTrace();
-        } catch (TransformerException e) {
-            e.printStackTrace();
+        } catch (ParserConfigurationException | IOException | TransformerException e) {
+            Log.e("TestFileSystem", "Error creating chapter content", e);
         }
     }
 
-    class NotifyCloseByteArrayStream extends ByteArrayOutputStream
+    static class NotifyCloseByteArrayStream extends ByteArrayOutputStream
     {
-        TestFileSystem parent;
-        String path;
+        final TestFileSystem parent;
+        final String path;
 
         public NotifyCloseByteArrayStream(String path, TestFileSystem parent) {
             this.path = path;
@@ -238,7 +236,14 @@ public class TestFileSystem implements IFileSystem {
         @Override
         public void close() throws IOException {
             super.close(); // officially does nothing, but for consistency.
-            parent.WriteStreamClosed(path, this.toString("UTF-8"));
+            String content;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                content = this.toString(StandardCharsets.UTF_8);
+            } else {
+                //noinspection CharsetObjectCanBeUsed
+                content = this.toString("UTF-8");
+            }
+            parent.WriteStreamClosed(path, content);
         }
     }
 }

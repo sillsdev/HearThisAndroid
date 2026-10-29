@@ -1,15 +1,12 @@
 package org.sil.hearthis;
 
-import Script.BookInfo;
-import Script.IScriptProvider;
+import script.BookInfo;
+import script.IScriptProvider;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.view.View;
 
+import java.util.Locale;
 
 public class BookButton  extends ProgressButton {
 
@@ -21,6 +18,10 @@ public class BookButton  extends ProgressButton {
 
     @Override
     protected int getForeColor() {
+        // Added null check for Model to prevent NullPointerException during rendering in IDE.
+        if (Model == null) {
+            return super.getForeColor();
+        }
         if (Model.getScriptProvider().GetTranslatedLineCount(Model.BookNumber) == 0)
             return R.color.navButtonUntranslatedColor;
         if (Model.BookNumber < 5) {
@@ -57,12 +58,20 @@ public class BookButton  extends ProgressButton {
 
     @Override
     protected double getExtraWidth() {
+        // Added null check for Model to prevent NullPointerException during rendering in IDE.
+        if (Model == null) {
+            return 0;
+        }
         int kMaxChapters = 150;//psalms
         return ((double)Model.ChapterCount / kMaxChapters) * 150.0;
     }
 
     @Override
     protected boolean isAllRecorded() {
+        // Added null check for Model to prevent NullPointerException during rendering in IDE.
+        if (Model == null) {
+            return false;
+        }
         BookInfo book = this.Model;
         IScriptProvider provider = book.getScriptProvider();
         int transLines = provider.GetTranslatedLineCount(book.BookNumber);
@@ -72,13 +81,17 @@ public class BookButton  extends ProgressButton {
 
     @Override
     protected String getLabel() {
+        // Added null check for Model and Abbr to prevent NullPointerException during rendering in IDE.
+        if (Model == null || Model.Abbr == null || Model.Abbr.isEmpty()) {
+            return "";
+        }
         char first = Model.Abbr.charAt(0);
         String abbr = Model.Abbr;
         if (first >= '0' && first <= '9') {
-        	abbr = abbr.substring(0,1) + abbr.substring(1,2).toUpperCase() + abbr.substring(2);
+        	abbr = abbr.charAt(0) + abbr.substring(1,2).toUpperCase(Locale.getDefault()) + abbr.substring(2);
         }
         else {
-        	abbr = abbr.substring(0,1).toUpperCase() + abbr.substring(1);
+        	abbr = abbr.substring(0,1).toUpperCase(Locale.getDefault()) + abbr.substring(1);
         }
         return abbr;
     }

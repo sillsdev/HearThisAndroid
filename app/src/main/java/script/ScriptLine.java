@@ -1,4 +1,4 @@
-package Script;
+package script;
 
 public class ScriptLine {
     public String Text;

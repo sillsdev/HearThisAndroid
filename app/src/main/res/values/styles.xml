@@ -5,7 +5,7 @@
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
-    <style name="AppBaseTheme" parent="Theme.AppCompat.Light">
+    <style name="AppBaseTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
@@ -13,10 +13,44 @@
         -->
     </style>
 
+    <style name="Theme.AudioRecorder" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- The system will now handle these automatically in API 36 -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+        <item name="android:windowBackground">@color/mainBackground</item>
+        <item name="colorPrimary">@android:color/black</item>
+        <item name="colorPrimaryDark">@android:color/black</item>
+
+        <!-- Status Bar for most screens (White with dark icons) -->
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Global Action Bar styling -->
+        <item name="actionBarStyle">@style/GlobalActionBar</item>
     </style>
+
+    <style name="GlobalActionBar" parent="Widget.AppCompat.ActionBar">
+        <item name="background">@android:color/black</item>
+        <item name="android:background">@android:color/black</item>
+        <item name="titleTextStyle">@style/GlobalActionBarTitleText</item>
+    </style>
+
+    <style name="GlobalActionBarTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <!-- Theme for SyncActivity with white background and black status bar -->
+    <style name="SyncTheme" parent="AppTheme">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
     <color name="mainBackground">#404040</color>
     <color name="navButtonHiliteColor">#913A1B</color>
     <color name="navButtonColor">#232653</color>
@@ -36,7 +70,7 @@
     <color name="navButtonPaulineColor">#232653</color>
     <color name="navButtonEpistlesColor">#353870</color>
     <color name="navButtonRevelationColor">#232653</color>
-    <color name="navButtonUntranslatedColor">#5F5F5F</color>"
+    <color name="navButtonUntranslatedColor">#5F5F5F</color>
     <color name="defaultTextColor">#FFF</color> <!-- Not sure this is what I wanted...accidental undo lost original-->
     <color name="goodLevelColor">#5F5F5F</color> <!-- matching audioButtonDisabledColor. Previous 070 was found distracting. -->
     <color name="badLevelColor">#F00</color>
@@ -46,4 +80,9 @@
     <color name="recordingColor">#39A500</color>
     <color name="audioButtonDisabledColor">#5F5F5F</color>
     <color name="scanPreviewBackground">#DDDDDD</color>
+
+    <!-- <style name="AppTheme" parent="AppBaseTheme">
+        <item name="android:windowBackground">@color/mainBackground</item>
+    </style> -->
+
 </resources>
