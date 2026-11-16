@@ -287,10 +287,51 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         }, ContextCompat.getMainExecutor(this));
     }
 
+    /**
+     * Returns true if the string is a dotted-quad IPv4 address: exactly four decimal
+     * octets, each 0-255, with no whitespace, signs, or leading zeros. Does no DNS lookup.
+     */
+    static boolean isValidIpv4(String s) {
+        if (s == null) {
+            return false;
+        }
+        String[] parts = s.split("\\.", -1);
+        if (parts.length != 4) {
+            return false;
+        }
+        for (String part : parts) {
+            int len = part.length();
+            if (len < 1 || len > 3) {
+                return false;
+            }
+            if (len > 1 && part.charAt(0) == '0') {
+                return false;
+            }
+            int value = 0;
+            for (int i = 0; i < len; i++) {
+                char c = part.charAt(i);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+                value = value * 10 + (c - '0');
+            }
+            if (value > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void handleBarcode(Barcode barcode) {
         String contents = barcode.getDisplayValue();
         if (contents == null) {
             Log.e(TAG, "Barcode content is null");
+            return;
+        }
+        if (!isValidIpv4(contents)) {
+            // Return before setting scanning=false so a bad QR code won't stop the scan.
+            // No reason not to continue scanning for a valid address.
+            Log.e(TAG, "Barcode content is not a valid IPv4 address: " + contents);
             return;
         }
 
