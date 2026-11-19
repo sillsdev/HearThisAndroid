@@ -1,6 +1,9 @@
 package org.sil.hearthis;
 
 import android.content.Context;
+import android.os.Build;
+import android.system.ErrnoException;
+import android.system.Os;
 import android.util.Log;
 
 import java.io.File;
@@ -8,6 +11,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import fi.iki.elonen.NanoHTTPD;
@@ -107,8 +112,11 @@ public class AcceptFileHandler {
         // Stream the raw bytes (not a String, which would corrupt binary content) into a temp
         // file, and only move it into place once the whole body has arrived. That way a dropped
         // connection never leaves a truncated file, and the body is never held in memory.
-        File temp = new File(dir, file.getName() + ".part");
+        // The temp name is unique per request so concurrent uploads to the same destination
+        // can't write into each other's file.
+        File temp = null;
         try {
+            temp = File.createTempFile(file.getName() + ".", ".part", dir);
             // Do NOT close this stream: it is the socket's input stream, and closing it closes
             // the connection before NanoHTTPD can send the response. That results in the PC side
             // suffering an unhandled System.Net.WebException.
@@ -116,14 +124,9 @@ public class AcceptFileHandler {
             try (FileOutputStream out = new FileOutputStream(temp)) {
                 copyExactly(in, out, contentLength);
             }
-            if (file.exists() && !file.delete()) {
-                throw new IOException("Could not replace existing file");
-            }
-            if (!temp.renameTo(file)) {
-                throw new IOException("Could not move received file into place");
-            }
+            replaceAtomically(temp, file);
         } catch (IOException e) {
-            if (temp.exists() && !temp.delete()) {
+            if (temp != null && temp.exists() && !temp.delete()) {
                 Log.e(TAG, "Failed to delete partial file: " + temp.getAbsolutePath());
             }
             if (listener != null) {
@@ -132,6 +135,24 @@ public class AcceptFileHandler {
             return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "failure: " + e.getMessage());
         }
         return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, "success");
+    }
+
+    /**
+     * Moves source over target in one atomic step, replacing any existing target without
+     * unlinking it first, so a failure leaves the old file intact.
+     */
+    private static void replaceAtomically(File source, File target) throws IOException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Files.move(source.toPath(), target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } else {
+            try {
+                // POSIX rename(2) atomically replaces an existing destination.
+                Os.rename(source.getAbsolutePath(), target.getAbsolutePath());
+            } catch (ErrnoException e) {
+                throw new IOException("Could not move received file into place: " + e.getMessage(), e);
+            }
+        }
     }
 
     private static void copyExactly(InputStream in, OutputStream out, long length) throws IOException {
