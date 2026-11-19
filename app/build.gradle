@@ -99,7 +99,15 @@ tasks.register('setupSyncTunnels') {
 
         def runAdb = { List<String> args ->
             def fullArgs = [adb] + args
-            def process = fullArgs.execute()
+            def process
+            try {
+                process = fullArgs.execute()
+            } catch (IOException e) {
+                // adb isn't installed or isn't on PATH (e.g. CI). Tunnels are only a convenience
+                // for local emulator syncing, so never let this break a build.
+                println "ADB not available (${e.message}); skipping: ${args.join(' ')}"
+                return -1
+            }
             def out = new StringBuilder()
             def err = new StringBuilder()
             process.consumeProcessOutput(out, err)
