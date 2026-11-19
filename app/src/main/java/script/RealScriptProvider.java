@@ -111,31 +111,39 @@ public class RealScriptProvider implements IScriptProvider {
                 Document dom = builder.parse(getFileSystem().ReadFile(getChapInfoFile()));
                 Element root = dom.getDocumentElement();
                 NodeList source = root.getElementsByTagName("Source");
-                if (source.getLength() == 1) {
-                    NodeList lineNodes = ((Element) source.item(0)).getElementsByTagName("ScriptLine");
-                    if (lineNoZeroBased < lineNodes.getLength()) {
-                        Element line = (Element) lineNodes.item(lineNoZeroBased);
-                        NodeList recordingsNodes = root.getElementsByTagName(recordingsEltName);
-                        Element recording;
-                        if (recordingsNodes.getLength() != 0) {
-                            recording = (Element) recordingsNodes.item(0);
-                        } else {
-                            recording = dom.createElement(recordingsEltName);
-                            root.appendChild(recording);
-                        }
-                        NodeList recordings = recording.getElementsByTagName("ScriptLine");
-                        Node currentRecording = findNodeByEltValue(recordings, "" + lineNo);
-                        Node newRecording = line.cloneNode(true);
-                        if (currentRecording != null) {
-                            recording.replaceChild(newRecording, currentRecording);
-                        } else {
-                            Node insertBefore = findNodeToInsertBefore(recordings, lineNo);
-                            recording.insertBefore(newRecording, insertBefore);
-                            String infoTxt = getFileSystem().getFile(getInfoTxtPath());
-                            String updated = incrementRecordingCount(infoTxt);
-                            getFileSystem().putFile(getInfoTxtPath(), updated);
-                        }
-                    }
+                if (source.getLength() != 1) {
+                    Log.e(TAG, "noteLineRecorded: expected exactly one <Source> in " + getChapInfoFile()
+                            + " but found " + source.getLength() + "; line " + lineNo
+                            + " was NOT marked as recorded");
+                    return;
+                }
+                NodeList lineNodes = ((Element) source.item(0)).getElementsByTagName("ScriptLine");
+                if (lineNoZeroBased < 0 || lineNoZeroBased >= lineNodes.getLength()) {
+                    Log.e(TAG, "noteLineRecorded: line index " + lineNoZeroBased + " is outside the "
+                            + lineNodes.getLength() + " <ScriptLine> nodes in " + getChapInfoFile()
+                            + "; line " + lineNo + " was NOT marked as recorded");
+                    return;
+                }
+                Element line = (Element) lineNodes.item(lineNoZeroBased);
+                NodeList recordingsNodes = root.getElementsByTagName(recordingsEltName);
+                Element recording;
+                if (recordingsNodes.getLength() != 0) {
+                    recording = (Element) recordingsNodes.item(0);
+                } else {
+                    recording = dom.createElement(recordingsEltName);
+                    root.appendChild(recording);
+                }
+                NodeList recordings = recording.getElementsByTagName("ScriptLine");
+                Node currentRecording = findNodeByEltValue(recordings, "" + lineNo);
+                Node newRecording = line.cloneNode(true);
+                if (currentRecording != null) {
+                    recording.replaceChild(newRecording, currentRecording);
+                } else {
+                    Node insertBefore = findNodeToInsertBefore(recordings, lineNo);
+                    recording.insertBefore(newRecording, insertBefore);
+                    String infoTxt = getFileSystem().getFile(getInfoTxtPath());
+                    String updated = incrementRecordingCount(infoTxt);
+                    getFileSystem().putFile(getInfoTxtPath(), updated);
                 }
                 getFileSystem().Delete(getChapInfoFile());
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
