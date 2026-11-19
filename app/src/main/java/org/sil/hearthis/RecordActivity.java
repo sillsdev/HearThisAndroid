@@ -71,6 +71,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	// Back to instance variables to avoid resource contention, but using safe lifecycle management.
 	private MediaRecorder recorder = null;
 	private WavAudioRecorder waveRecorder = null;
+	// True from the moment the user presses Record until stopRecording() has finished with it.
+	// Lets onPause() (e.g. on rotation) finish a recording in progress via the normal path.
+	private volatile boolean recordingInProgress = false;
 	public static final boolean useWaveRecorder = true;
 	LevelMeterView levelMeter;
 
@@ -192,6 +195,13 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	@Override
 	protected void onPause() {
 		super.onPause();
+		if (recordingInProgress) {
+			// The activity is going away (backgrounded, rotated, interrupted) mid-recording.
+			// Finish it through the normal path so a too-short take is discarded and a good one
+			// is noted as recorded, rather than just killing the recorder. No dialog: the
+			// window would be leaked when the activity is destroyed.
+			stopRecording(false);
+		}
 		stopMonitoring();
 		stopPlaying();
 
@@ -388,6 +398,7 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	void startRecording() {
 		stopPlaying();
+		recordingInProgress = true;
 		recordButton.setButtonState(BtnState.Pushed);
 		recordButton.setWaiting(true);
 		if (useWaveRecorder) {
@@ -504,6 +515,11 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	void stopRecording() {
+		stopRecording(true);
+	}
+
+	private void stopRecording(boolean showTooShortDialog) {
+		recordingInProgress = false;
 		long beginStop = System.currentTimeMillis();
 		synchronized (startingLock) {
 			while (starting) {
@@ -541,14 +557,16 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		// Don't just use current time here. It can take ~half a second to get things stopped.
 		if (beginStop - startRecordingTime < 500) {
 			// Press not long enough; treat as failure.
-			new AlertDialog.Builder(this)
-					//.setTitle("Too short!")
-					.setMessage(R.string.record_too_short)
-					.setPositiveButton(android.R.string.ok, (dialog, which) -> {
-						// nothing to do
-					})
-					.setIcon(android.R.drawable.ic_dialog_alert)
-					.show();
+			if (showTooShortDialog) {
+				new AlertDialog.Builder(this)
+						//.setTitle("Too short!")
+						.setMessage(R.string.record_too_short)
+						.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+							// nothing to do
+						})
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.show();
+			}
 			if (_recordingFilePath != null) {
 				File badFile = new File(_recordingFilePath);
 				if (badFile.exists()) {
@@ -564,7 +582,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		playButton.setIsDefault(true);
 		nextButton.setIsDefault(false);
 		updateDisplayState();
-		_provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
+		if (_provider != null) {
+			_provider.noteBlockRecorded(_bookNum, _chapNum, _activeLine);
+		}
 	}
 
 	void playButtonClicked() {
