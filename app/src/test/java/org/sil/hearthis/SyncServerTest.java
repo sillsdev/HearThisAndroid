@@ -73,4 +73,12 @@ public class SyncServerTest {
     public void unparseableContentLength_closesConnection() {
         assertTrue(SyncServer.shouldCloseConnection(headers("content-length", "abc"), "/list", response(Response.Status.OK)));
     }
+
+    @Test
+    public void negativeContentLength_closesConnection() {
+        // AcceptFileHandler answers 411 without reading the body, so any bytes sent would
+        // otherwise be parsed as the next request on a kept-alive connection.
+        assertTrue(SyncServer.shouldCloseConnection(headers("content-length", "-1"), "/putfile?path=a.txt", response(Response.Status.BAD_REQUEST))); // stand-in for the handler's 411
+        assertTrue(SyncServer.shouldCloseConnection(headers("content-length", "-5"), "/list", response(Response.Status.OK)));
+    }
 }

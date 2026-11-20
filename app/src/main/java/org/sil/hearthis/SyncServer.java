@@ -137,7 +137,9 @@ public class SyncServer extends NanoHTTPD {
             return false;
         }
         try {
-            return Long.parseLong(length.trim()) > 0;
+            // A negative length is malformed; we can't tell how many body bytes follow,
+            // so be safe and cause the caller to close the connection.
+            return Long.parseLong(length.trim()) != 0;
         } catch (NumberFormatException e) {
             return true; // can't tell, so be safe
         }
