@@ -70,18 +70,12 @@ public class AcceptFileHandler {
             return NanoHTTPD.newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing path parameter");
         }
 
-        // Fix Path Traversal Vulnerability
         File file = new File(baseDir, filePath);
-        try {
-            // Verify path is inside baseDir to prevent traversal attacks
-            String canonicalBase = baseDir.getCanonicalPath();
-            String canonicalRequested = file.getCanonicalPath();
-            // Require a separator after the base so a sibling like "<base>-evil" doesn't match.
-            if (!canonicalRequested.startsWith(canonicalBase + File.separator)) {
-                return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "Access denied");
-            }
-        } catch (IOException e) {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Error validating path");
+        // Path traversal check. We write to this path so it must be strictly inside baseDir, never
+        // baseDir itself, indicated by passing 'false'.
+        Response denied = PathGuard.check(baseDir, file, filePath, false);
+        if (denied != null) {
+            return denied;
         }
 
         String contentLengthHeader = session.getHeaders().get("content-length");

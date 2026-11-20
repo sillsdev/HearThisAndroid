@@ -38,19 +38,11 @@ public class RequestFileHandler {
                     NanoHTTPD.MIME_PLAINTEXT, "Missing path parameter");
         }
 
-        // Fix Path Traversal Vulnerability
         File file = new File(baseDir, filePath);
-        try {
-            String canonicalBase = baseDir.getCanonicalPath();
-            String canonicalRequested = file.getCanonicalPath();
-            // Require a separator after the base so a sibling like "<base>-evil" doesn't match.
-            if (!canonicalRequested.equals(canonicalBase)
-                    && !canonicalRequested.startsWith(canonicalBase + File.separator)) {
-                Log.w(TAG, "Attempted path traversal: " + filePath);
-                return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "Access denied");
-            }
-        } catch (IOException e) {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Error validating path");
+        // Path traversal check.
+        Response denied = PathGuard.check(baseDir, file, filePath, true);
+        if (denied != null) {
+            return denied;
         }
 
         if (listener != null)

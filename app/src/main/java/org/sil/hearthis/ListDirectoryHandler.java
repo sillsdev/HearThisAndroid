@@ -1,9 +1,7 @@
 package org.sil.hearthis;
 
 import android.content.Context;
-import android.util.Log;
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -35,20 +33,12 @@ public class ListDirectoryHandler {
                 ? pathParams.get(0).replace('\\', '/')
                 : "";
 
-        // Fix Path Traversal Vulnerability
+        // The base itself (empty path) is allowed: that lists the root.
         File file = new File(baseDir, filePath);
-        try {
-            String canonicalBase = baseDir.getCanonicalPath();
-            String canonicalRequested = file.getCanonicalPath();
-            // Require a separator after the base so a sibling like "<base>-evil" doesn't match;
-            // the base itself (empty path) is allowed.
-            if (!canonicalRequested.equals(canonicalBase)
-                    && !canonicalRequested.startsWith(canonicalBase + File.separator)) {
-                Log.w(TAG, "Attempted path traversal: " + filePath);
-                return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "Access denied");
-            }
-        } catch (IOException e) {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Error validating path");
+        // Path traversal check.
+        Response denied = PathGuard.check(baseDir, file, filePath, true);
+        if (denied != null) {
+            return denied;
         }
 
         StringBuilder sb = new StringBuilder();
