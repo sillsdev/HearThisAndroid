@@ -45,8 +45,9 @@ public class RequestFileHandler {
             return denied;
         }
 
-        if (listener != null)
+        if (listener != null) {
             listener.sendingFile(filePath);
+        }
         
         if (!file.exists() || !file.isFile()) {
             return NanoHTTPD.newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "File not found");

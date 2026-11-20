@@ -361,7 +361,9 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
 
     private void sendRegistrationMessage(final String desktopIpAddress) {
         final String ourIpAddress = getOurIpAddress();
-        if (ourIpAddress == null) return;
+        if (ourIpAddress == null) {
+            return;
+        }
         new Thread(() -> {
             try (DatagramSocket socket = new DatagramSocket()) {
                 // Registration must be sent to port 11007 as a UTF-8 encoded string containing
