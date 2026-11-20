@@ -13,6 +13,7 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -218,6 +219,10 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         getMenuInflater().inflate(R.menu.menu_sync, menu);
         ipView = findViewById(R.id.ip_address);
         scanBtn = findViewById(R.id.scan_button);
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            // The manifest declares the camera optional, so we may be on a device without one.
+            scanBtn.setVisibility(View.GONE);
+        }
         scanBtn.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(SyncActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 startCamera();
@@ -281,10 +286,23 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
                 cameraProvider.unbindAll();
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
 
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException | IllegalArgumentException | IllegalStateException e) {
+                // IllegalArgumentException: no camera matches the selector (e.g. no back camera).
+                // IllegalStateException: the camera can't be bound (e.g. lifecycle already destroyed).
                 Log.e(TAG, "Use case binding failed", e);
+                cameraUnavailable();
             }
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    /**
+     * Backs out of scanning when the camera can't be used and points the user at manual IP entry.
+     * Must be called on the main thread.
+     */
+    private void cameraUnavailable() {
+        scanning = false;
+        previewView.setVisibility(View.INVISIBLE);
+        Toast.makeText(this, R.string.camera_unavailable, Toast.LENGTH_LONG).show();
     }
 
     /**
