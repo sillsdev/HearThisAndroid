@@ -15,6 +15,7 @@
     <string name="title_activity_sync">Synchronisation</string>
     <string name="action_settings">Paramètres</string>
     <string name="scan">Scanner</string>
+    <string name="camera_unavailable">Aucune caméra utilisable n\'a été trouvée. Veuillez saisir manuellement l\'adresse IP de cet appareil dans HearThis Desktop.</string>
     <string name="continue_button_caption">Continuer</string>
     <string name="title_activity_choose_book">Choisir un livre</string>
     <string name="sync_success">Synchronisation terminée avec succès !</string>
