@@ -236,7 +236,12 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         });
         String ourIpAddress = getOurIpAddress();
         TextView ourIpView = findViewById(R.id.our_ip_address);
-        ourIpView.setText(ourIpAddress);
+        if (ourIpAddress == null) {
+            Log.e(TAG, "No usable IPv4 address to show in Options menu");
+            ourIpView.setText(R.string.no_ip_address);
+        } else {
+            ourIpView.setText(ourIpAddress);
+        }
         return true;
     }
 

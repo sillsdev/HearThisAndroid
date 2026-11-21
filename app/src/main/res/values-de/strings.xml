@@ -16,6 +16,7 @@
     <string name="action_settings">Einstellungen</string>
     <string name="scan">Scannen</string>
     <string name="camera_unavailable">Es wurde keine verwendbare Kamera gefunden. Bitte geben Sie die IP-Adresse dieses Geräts manuell in HearThis Desktop ein.</string>
+    <string name="no_ip_address">Es wurde keine verwendbare Netzwerkadresse gefunden. Bitte verbinden Sie sich mit einem WLAN.</string>
     <string name="continue_button_caption">Weiter</string>
     <string name="title_activity_choose_book">Buch wählen</string>
     <string name="sync_success">Synchronisierung erfolgreich abgeschlossen!</string>

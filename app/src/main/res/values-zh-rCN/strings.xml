@@ -16,6 +16,7 @@
     <string name="action_settings">设置</string>
     <string name="scan">扫描</string>
     <string name="camera_unavailable">未找到可用的摄像头。请在 HearThis 桌面版中手动输入此设备的 IP 地址。</string>
+    <string name="no_ip_address">未找到可用的网络地址。请连接到 Wi-Fi。</string>
     <string name="continue_button_caption">继续</string>
     <string name="title_activity_choose_book">选择图书</string>
     <string name="sync_success">同步成功完成！</string>

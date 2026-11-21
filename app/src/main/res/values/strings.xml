@@ -16,6 +16,7 @@
     <string name="action_settings">Settings</string>
     <string name="scan">Scan</string>
     <string name="camera_unavailable">No usable camera was found. Please manually enter this device\'s IP address on HearThis Desktop.</string>
+    <string name="no_ip_address">No usable network address was found. Please connect to Wi-Fi.</string>
     <string name="continue_button_caption">Continue</string>
     <string name="title_activity_choose_book">ChooseBookActivity</string>
     <string name="sync_success">Sync completed successfully!</string>

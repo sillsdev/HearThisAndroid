@@ -16,6 +16,7 @@
     <string name="action_settings">Ajustes</string>
     <string name="scan">Escanear</string>
     <string name="camera_unavailable">No se encontró ninguna cámara utilizable. Introduzca manualmente la dirección IP de este dispositivo en HearThis Desktop.</string>
+    <string name="no_ip_address">No se encontró ninguna dirección de red utilizable. Conéctese a una red Wi-Fi.</string>
     <string name="continue_button_caption">Continuar</string>
     <string name="title_activity_choose_book">Elegir libro</string>
     <string name="sync_success">¡Sincronización completada con éxito!</string>
