@@ -42,11 +42,14 @@ import com.google.mlkit.vision.common.InputImage;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -378,18 +381,22 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
     }
 
     private void sendRegistrationMessage(final String desktopIpAddress) {
-        final String ourIpAddress = getOurIpAddress();
-        if (ourIpAddress == null) {
-            return;
-        }
         new Thread(() -> {
             try (DatagramSocket socket = new DatagramSocket()) {
+                InetAddress desktop = InetAddress.getByName(desktopIpAddress);
+                // Advertise the address on the interface that routes to the desktop, so we don't
+                // send a cellular or VPN address the desktop can't reach.
+                String ourIpAddress = getRoutedAddressTo(socket, desktop, 11007);
+                if (ourIpAddress == null) {
+                    Log.e(TAG, "No usable IPv4 address to register with the desktop");
+                    return;
+                }
                 // Registration must be sent to port 11007 as a UTF-8 encoded string containing
                 // only the Android device's IPv4 address (no prefix or whitespace), as expected
                 // by the desktop application.
                 byte[] data = ourIpAddress.getBytes(StandardCharsets.UTF_8);
-                DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(desktopIpAddress), 11007);
-                socket.send(packet);
+                // The socket is already connected to the desktop (see getRoutedAddressTo).
+                socket.send(new DatagramPacket(data, data.length));
             } catch (IOException e) {
                 Log.e(TAG, "Error sending registration packet", e);
             }
@@ -444,21 +451,80 @@ public class SyncActivity extends AppCompatActivity implements AcceptNotificatio
         runOnUiThread(() -> progressView.setText(getString(R.string.sending_file, path)));
     }
 
+    /** An IP address found on a local network interface, with what we need to rank it. */
+    static final class AddressCandidate {
+        final InetAddress address;
+        final boolean pointToPoint;
+
+        AddressCandidate(InetAddress address, boolean pointToPoint) {
+            this.address = address;
+            this.pointToPoint = pointToPoint;
+        }
+    }
+
+    /**
+     * Picks the address most likely to be our LAN address, or null if there is none.
+     * Only non-loopback, non-link-local IPv4 addresses qualify. Preference order: a site-local
+     * (RFC1918) address on an ordinary interface, then any address on an ordinary interface, then
+     * anything on a point-to-point interface. Cellular and VPN tunnels are usually point-to-point,
+     * so this keeps them from winning over a Wi-Fi/Ethernet address regardless of the order in which
+     * the interfaces are enumerated. Within a rank, the first candidate wins.
+     */
+    static String pickBestAddress(List<AddressCandidate> candidates) {
+        String best = null;
+        int bestRank = Integer.MAX_VALUE;
+        for (AddressCandidate c : candidates) {
+            InetAddress a = c.address;
+            if (!(a instanceof Inet4Address) || a.isLoopbackAddress() || a.isLinkLocalAddress() || a.isAnyLocalAddress()) {
+                continue;
+            }
+            int rank = c.pointToPoint ? 2 : (a.isSiteLocalAddress() ? 0 : 1);
+            if (rank < bestRank) {
+                best = a.getHostAddress();
+                bestRank = rank;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Best guess at our LAN address, for display. When the desktop's address is known, use
+     * {@link #getRoutedAddressTo} instead, since it asks the OS which interface actually reaches it.
+     */
     private String getOurIpAddress() {
+        List<AddressCandidate> candidates = new ArrayList<>();
         try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en != null && en.hasMoreElements(); ) {
                 NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    String hostAddress = inetAddress.getHostAddress();
-                    if (!inetAddress.isLoopbackAddress() && !inetAddress.isLinkLocalAddress() && hostAddress != null && hostAddress.contains(".")) {
-                        return hostAddress;
-                    }
+                if (!intf.isUp() || intf.isVirtual()) {
+                    continue;
+                }
+                boolean p2p = intf.isPointToPoint();
+                for (Enumeration<InetAddress> addrs = intf.getInetAddresses(); addrs.hasMoreElements(); ) {
+                    candidates.add(new AddressCandidate(addrs.nextElement(), p2p));
                 }
             }
         } catch (SocketException ex) {
             Log.e(TAG, ex.toString());
         }
-        return null;
+        return pickBestAddress(candidates);
+    }
+
+    /**
+     * Returns the local IPv4 address the OS would use to reach the given host, which is the address
+     * the host can reach us on. Connecting a UDP socket sends nothing; it just selects the route.
+     * Falls back to {@link #getOurIpAddress()} if the route can't be determined.
+     */
+    private String getRoutedAddressTo(DatagramSocket socket, InetAddress host, int port) {
+        try {
+            socket.connect(host, port);
+            InetAddress local = socket.getLocalAddress();
+            if (local instanceof Inet4Address && !local.isAnyLocalAddress() && !local.isLoopbackAddress()) {
+                return local.getHostAddress();
+            }
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Could not determine route to " + host, e);
+        }
+        return getOurIpAddress();
     }
 }
