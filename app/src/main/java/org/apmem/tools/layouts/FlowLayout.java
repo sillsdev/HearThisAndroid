@@ -14,6 +14,8 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+
 public class FlowLayout extends ViewGroup {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
@@ -184,7 +186,7 @@ public class FlowLayout extends ViewGroup {
     }
 
     @Override
-    protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
+    protected boolean drawChild(@NonNull Canvas canvas, View child, long drawingTime) {
         boolean more = super.drawChild(canvas, child, drawingTime);
         this.drawDebugInfo(canvas, child);
         return more;
@@ -283,7 +285,7 @@ public class FlowLayout extends ViewGroup {
     }
 
     public static class LayoutParams extends ViewGroup.LayoutParams {
-        private static int NO_SPACING = -1;
+        private static final int NO_SPACING = -1;
         private int x;
         private int y;
         private int horizontalSpacing = NO_SPACING;
@@ -317,11 +319,11 @@ public class FlowLayout extends ViewGroup {
         }
 
         private void readStyleParameters(Context context, AttributeSet attributeSet) {
-            TypedArray a = context.obtainStyledAttributes(attributeSet, R.styleable.FlowLayout_LayoutParams);
+            TypedArray a = context.obtainStyledAttributes(attributeSet, R.styleable.FlowLayout_Layout);
             try {
-                horizontalSpacing = a.getDimensionPixelSize(R.styleable.FlowLayout_LayoutParams_layout_horizontalSpacing, NO_SPACING);
-                verticalSpacing = a.getDimensionPixelSize(R.styleable.FlowLayout_LayoutParams_layout_verticalSpacing, NO_SPACING);
-                newLine = a.getBoolean(R.styleable.FlowLayout_LayoutParams_layout_newLine, false);
+                horizontalSpacing = a.getDimensionPixelSize(R.styleable.FlowLayout_Layout_layout_horizontalSpacing, NO_SPACING);
+                verticalSpacing = a.getDimensionPixelSize(R.styleable.FlowLayout_Layout_layout_verticalSpacing, NO_SPACING);
+                newLine = a.getBoolean(R.styleable.FlowLayout_Layout_layout_newLine, false);
             } finally {
                 a.recycle();
             }
