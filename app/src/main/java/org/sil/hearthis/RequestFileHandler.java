@@ -16,7 +16,9 @@ import fi.iki.elonen.NanoHTTPD.Response;
 public class RequestFileHandler {
     private static final String TAG = "RequestFileHandler";
     final Context _parent;
-    private IFileSentNotification listener;
+    // Set from the UI thread, read from NanoHTTPD worker threads. Read it once into a local
+    // before use so a concurrent setListener(null) can't cause an NPE between check and call.
+    private volatile IFileSentNotification listener;
 
     public RequestFileHandler(Context parent) {
         _parent = parent;
@@ -45,8 +47,9 @@ public class RequestFileHandler {
             return denied;
         }
 
-        if (listener != null) {
-            listener.sendingFile(filePath);
+        IFileSentNotification l = listener;
+        if (l != null) {
+            l.sendingFile(filePath);
         }
         
         if (!file.exists() || !file.isFile()) {

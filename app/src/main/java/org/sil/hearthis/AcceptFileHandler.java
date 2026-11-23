@@ -49,7 +49,9 @@ public class AcceptFileHandler {
     };
 
     private final Context _parent;
-    private IFileReceivedNotification listener;
+    // Set from the UI thread, read from NanoHTTPD worker threads. Read it once into a local
+    // before use so a concurrent setListener(null) can't cause an NPE between check and call.
+    private volatile IFileReceivedNotification listener;
 
     public AcceptFileHandler(Context parent) {
         _parent = parent;
@@ -94,8 +96,9 @@ public class AcceptFileHandler {
             return NanoHTTPD.newFixedLengthResponse(PAYLOAD_TOO_LARGE, NanoHTTPD.MIME_PLAINTEXT, "File too large");
         }
 
-        if (listener != null) {
-            listener.receivingFile(filePath);
+        IFileReceivedNotification startListener = listener;
+        if (startListener != null) {
+            startListener.receivingFile(filePath);
         }
 
         File dir = file.getParentFile();
@@ -123,8 +126,9 @@ public class AcceptFileHandler {
             if (temp != null && temp.exists() && !temp.delete()) {
                 Log.e(TAG, "Failed to delete partial file: " + temp.getAbsolutePath());
             }
-            if (listener != null) {
-                listener.receiveFailed(filePath);
+            IFileReceivedNotification failListener = listener;
+            if (failListener != null) {
+                failListener.receiveFailed(filePath);
             }
             return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "failure: " + e.getMessage());
         }
