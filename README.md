@@ -17,7 +17,7 @@ Build requirements:
 - **Android SDK Build-Tools** — any version compatible with API 36 (install the latest available via the SDK Manager)
 - **Android SDK Platform-Tools** — the latest stable version
 - **Minimum SDK**: API 23 (Android 6.0 Marshmallow) — required by the CameraX and ML Kit libraries
-- **Java 17** — the project is compiled with Java 17 source and target compatibility; make sure the JDK in Android Studio is set to 17 or later
+- **Java 21** — the project is compiled with Java 21 source and target compatibility; make sure the JDK in Android Studio is set to 21 or later
 - **Gradle 9.3.1** and **Android Gradle Plugin 9.1.0** — these are managed automatically by the Gradle wrapper; no manual installation is needed
 
 # Testing
@@ -101,7 +101,7 @@ The build system was significantly updated to target API 36. A series of increme
 - Updated `minSdk` from 18 to 21 in the initial Android 15 update, then further to 23 when the camera and scanning libraries were added (see Camera and Scanning section above)
 - Replaced the deprecated `jcenter()` Maven repository with `mavenCentral()`
 - Removed Jetifier, which is no longer needed now that all dependencies use AndroidX-native artifacts
-- Added Java 17 source and target compatibility via `compileOptions`
+- Added Java 17 source and target compatibility via `compileOptions`, later raised to Java 21 so that no unit tests are skipped
 - Added an explicit `namespace` declaration to `app/build.gradle`, which is required by newer AGP versions
 - Removed `useLibrary 'org.apache.http.legacy'`, which was only needed by the old Apache HTTP server and became unnecessary after switching to NanoHTTPD
 - Cleaned up stale and deprecated entries in `gradle.properties`
