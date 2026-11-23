@@ -47,12 +47,15 @@ public class ChooseChapterActivity extends AppCompatActivity {
 		ServiceLocator.getServiceLocator().init(this);
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
-        assert extras != null;
-        final BookInfo book = BundleCompat.getSerializable(extras, "bookInfo", BookInfo.class);
-		
+		final BookInfo book = extras == null ? null
+				: BundleCompat.getSerializable(extras, "bookInfo", BookInfo.class);
+		if (book == null) {
+			finish();
+			return;
+		}
+
 		TextView bookBox = findViewById(R.id.bookNameText);
-        assert book != null;
-        bookBox.setText(book.Name);
+		bookBox.setText(book.Name);
 		
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		ViewGroup chapsFlow = findViewById(R.id.chapsFlow);

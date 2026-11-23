@@ -124,8 +124,8 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 		Intent intent = getIntent();
 		Bundle extras = intent.getExtras();
-		assert extras != null;
-		BookInfo book = BundleCompat.getSerializable(extras, "bookInfo", BookInfo.class);
+		BookInfo book = extras == null ? null
+				: BundleCompat.getSerializable(extras, "bookInfo", BookInfo.class);
 		if (book != null) {
 			_chapNum = extras.getInt("chapter");
 			_bookNum = book.BookNumber;
