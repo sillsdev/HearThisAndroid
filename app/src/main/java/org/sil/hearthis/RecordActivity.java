@@ -133,7 +133,12 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 			_chapNum = extras.getInt("chapter");
 			_bookNum = book.BookNumber;
 			_provider = book.getScriptProvider();
-			_activeLine = extras.getInt("line", 0);
+			int intentLine = extras.getInt("line", 0);
+			// The Intent survives recreation (e.g. rotation), so it can't tell us where the user
+			// had got to; prefer the line saved by onSaveInstanceState if there is one.
+			_activeLine = savedInstanceState != null
+					? savedInstanceState.getInt(ACTIVE_LINE, intentLine)
+					: intentLine;
 		} else if (savedInstanceState != null) {
 			_chapNum = savedInstanceState.getInt(CHAP_NUM);
 			_bookNum = savedInstanceState.getInt(BOOK_NUM);
