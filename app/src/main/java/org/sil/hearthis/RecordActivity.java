@@ -222,7 +222,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 
 		AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-		if (usingSpeaker) {
+		// Only undo what we did: if the speaker was already on before we started (e.g. during a
+		// call), leave it on.
+		if (usingSpeaker && !wasUsingSpeaker) {
 			setSpeakerphoneOn(am, false);
 			am.setMode(AudioManager.MODE_NORMAL);
 		}
