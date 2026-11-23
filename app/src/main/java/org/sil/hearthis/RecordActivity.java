@@ -284,11 +284,9 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	private void updateDisplayState() {
-		if (_recordingFilePath != null) {
-			boolean recordingExists = new File(_recordingFilePath).exists();
-			playButton.setButtonState(recordingExists ? BtnState.Normal : BtnState.Inactive);
-			playButton.setEnabled(recordingExists);
-		}
+		boolean recordingExists = _recordingFilePath != null && new File(_recordingFilePath).exists();
+		playButton.setButtonState(recordingExists ? BtnState.Normal : BtnState.Inactive);
+		playButton.setEnabled(recordingExists);
 	}
 
 	static int getNewScrollPosition(int scrollPos, int height, int newLine, int[] tops) {
@@ -640,12 +638,15 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	void playButtonClicked() {
 		stopPlaying();
-		playButton.setPlaying(true);
-		playButtonPlayer = new MediaPlayer();
-		playButtonPlayer.setOnCompletionListener(this);
+		if (_recordingFilePath == null) {
+			// Nothing to play, and onCompletion would never fire to reset the button.
+			return;
+		}
 		stopMonitoring();
         //noinspection CommentedOutCode
         try {
+			playButtonPlayer = new MediaPlayer();
+			playButtonPlayer.setOnCompletionListener(this);
 			// Todo:  file name and location based on book, chapter, segment
 
 //			AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -654,18 +655,23 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 //					+ " of max " + maxVol);
 //			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVol, 0);
 
-			if (_recordingFilePath != null) {
-				File file = new File(_recordingFilePath);
-				playButtonPlayer.setDataSource(file.getAbsolutePath());
-				playButtonPlayer.setAudioAttributes(new AudioAttributes.Builder()
-						.setUsage(AudioAttributes.USAGE_MEDIA)
-						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-						.build());
-				playButtonPlayer.prepare();
-				playButtonPlayer.start();
-			}
+			File file = new File(_recordingFilePath);
+			playButtonPlayer.setDataSource(file.getAbsolutePath());
+			playButtonPlayer.setAudioAttributes(new AudioAttributes.Builder()
+					.setUsage(AudioAttributes.USAGE_MEDIA)
+					.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+					.build());
+			playButtonPlayer.prepare();
+			// Only show "playing" once we know playback can start; onCompletion resets it.
+			playButton.setPlaying(true);
+			playButtonPlayer.start();
 		} catch (Exception e) {
 			Log.e("Player", "Error playing audio", e);
+			// onCompletion will never fire, so undo what we did to get ready.
+			stopPlaying();
+			playButton.setPlaying(false);
+			updateDisplayState();
+			startMonitoring();
 		}
 	}
 
