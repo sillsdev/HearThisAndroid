@@ -70,7 +70,10 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 
 	// Back to instance variables to avoid resource contention, but using safe lifecycle management.
 	private MediaRecorder recorder = null;
+	// Accessed from the UI thread and from the thread that starts a recording; all reads and
+	// writes must go through getRecorder/takeRecorder/setRecorder, which use recorderLock.
 	private WavAudioRecorder waveRecorder = null;
+	private final Object recorderLock = new Object();
 	// True from the moment the user presses Record until stopRecording() has finished with it.
 	// Lets onPause() (e.g. on rotation) finish a recording in progress via the normal path.
 	private volatile boolean recordingInProgress = false;
@@ -335,32 +338,72 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 	}
 
-	void startMonitoring() {
-		if (waveRecorder != null) {
-			waveRecorder.release();
+	private WavAudioRecorder getRecorder() {
+		synchronized (recorderLock) {
+			return waveRecorder;
 		}
-		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		waveRecorder.setMonitorListener(this);
-		waveRecorder.startMonitoring();
+	}
+
+	// Atomically removes and returns the current recorder (or null), so only one caller can release it.
+	private WavAudioRecorder takeRecorder() {
+		synchronized (recorderLock) {
+			WavAudioRecorder result = waveRecorder;
+			waveRecorder = null;
+			return result;
+		}
+	}
+
+	// Atomically installs rec, releasing any recorder still installed so it is not orphaned.
+	private void setRecorder(WavAudioRecorder rec) {
+		WavAudioRecorder old;
+		synchronized (recorderLock) {
+			old = waveRecorder;
+			waveRecorder = rec;
+		}
+		if (old != null && old != rec) {
+			old.release();
+		}
+	}
+
+	// Removes rec from the field only if it is still the current recorder.
+	private void clearRecorderIfCurrent(WavAudioRecorder rec) {
+		synchronized (recorderLock) {
+			if (waveRecorder == rec) {
+				waveRecorder = null;
+			}
+		}
+	}
+
+	void startMonitoring() {
+		WavAudioRecorder old = takeRecorder();
+		if (old != null) {
+			old.release();
+		}
+		WavAudioRecorder rec = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		setRecorder(rec);
+		rec.setMonitorListener(this);
+		rec.startMonitoring();
 	}
 
 	private void stopMonitoring() {
-		if (waveRecorder != null) {
-			waveRecorder.stop();
-			waveRecorder.release();
-			waveRecorder = null;
+		WavAudioRecorder rec = takeRecorder();
+		if (rec != null) {
+			rec.stop();
+			rec.release();
 		}
 	}
 
 	void startWaveRecorder() {
-		if (waveRecorder != null) {
-			waveRecorder.release();
+		WavAudioRecorder old = takeRecorder();
+		if (old != null) {
+			old.release();
 		}
-		waveRecorder = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		final WavAudioRecorder rec = new WavAudioRecorder(AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		setRecorder(rec);
 		if (_recordingFilePath == null) {
 			Log.e("Recorder","Error, _recordingFilePath is null [1]");
-			waveRecorder.release();
-			waveRecorder = null;
+			clearRecorderIfCurrent(rec);
+			rec.release();
 			abortRecordingStart();
 			synchronized (startingLock) {
 				starting = false;
@@ -374,10 +417,10 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 				Log.e("Recorder", "Error deleting old recording at" + _recordingFilePath);
 			}
 		}
-		waveRecorder.setOutputFile(_recordingFilePath);
-		waveRecorder.prepare();
-		waveRecorder.setMonitorListener(this);
-		waveRecorder.start();
+		rec.setOutputFile(_recordingFilePath);
+		rec.prepare();
+		rec.setMonitorListener(this);
+		rec.start();
 		recordButton.setWaiting(false);
 		startRecordingTime = System.currentTimeMillis();
 		synchronized (startingLock) {
@@ -535,13 +578,14 @@ public class RecordActivity extends AppCompatActivity implements View.OnClickLis
 		}
 		recordButton.setButtonState(BtnState.Normal);
 		recordButton.setWaiting(false);
-		if (useWaveRecorder ? waveRecorder == null : recorder == null) {
+		final WavAudioRecorder rec = getRecorder();
+		if (useWaveRecorder ? rec == null : recorder == null) {
 			// Recording never started (see abortRecordingStart), so there is nothing to stop and
 			// no point reporting that the press was too short.
 			return;
 		}
-		if (useWaveRecorder && waveRecorder != null)  {
-			waveRecorder.stop();
+		if (useWaveRecorder && rec != null)  {
+			rec.stop();
 			startMonitoring();
 		}
 	   else if (recorder != null) {
