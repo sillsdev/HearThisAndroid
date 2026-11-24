@@ -21,7 +21,7 @@ Build requirements:
 - **Gradle 9.3.1** and **Android Gradle Plugin 9.1.0** — these are managed automatically by the Gradle wrapper; no manual installation is needed
 
 # Testing
-The automated test suite has been significantly expanded and all tests are expected to pass with the current configuration.
+All tests are expected to pass with the current configuration.
 
 **Unit tests** (no device or emulator required) live in `app/src/test/java/org/sil/hearthis/` and use JUnit 4 with Robolectric for any tests that need Android context. To run them in Android Studio, right-click the `org.sil.hearthis` package under that directory and choose *Run tests in 'org.sil.hearthis'*.
 
@@ -50,19 +50,14 @@ Test library notes:
 
 ### Http Server
 
-The application was using a deprecated http server library. We updated the server with a new library called NanoHTTPD. This allows the server to be future-proof.
+The app syncs with HearThis for Windows through an embedded HTTP server built on [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) (`SyncServer`, port 8087). Notable behavior:
 
-Along with updating the server library we ensured that the server ran more efficiently. Tasks we looked into and updated are the following:
-
-- Guard Against Double Start and Stop in SyncServer
-- Fix Path Traversal Vulnerability in File Handlers
-- Remove Static Listener Memory Leaks
-- Make Notification Listener List Thread Safe
-- Fix UI Thread Violations in SyncActivity
-- Improve File Upload Error Handling
-- Improve Resource and Stream Management
-- Remove Hardcoded Device Name
-- Improve Server Lifecycle Management
+- The server runs inside `SyncService`, a foreground service, and is stopped when the sync screen finishes. Starting an already running server, or stopping one that never started, is a no-op.
+- All file handlers share one path-traversal check (`PathGuard`). Uploads (`/putfile`) must resolve strictly inside the app's files directory.
+- Uploads must send a `Content-Length` (otherwise 411) of at most 100 MB (otherwise 413). The body is streamed to a temporary file and moved into place atomically only once it has fully arrived, so a dropped connection never leaves a truncated file. A failed upload deletes its temporary file, returns a 500, and is reported to the UI.
+- `AcceptNotificationHandler` keeps its listeners in a thread-safe list, and `SyncActivity` registers its listeners in `onResume` and removes them in `onPause`, so the server never holds on to a stopped activity.
+- Server callbacks arrive on NanoHTTPD worker threads; `SyncActivity` moves every UI update onto the UI thread.
+- The device name reported to HearThis is the device model (`Build.MODEL`).
 
 ### Internationalization
 
@@ -78,10 +73,6 @@ Updated application to support various languages. The application currently supp
 
 Making the application compliant with Android visual constraints, including dynamically changing the status bar to fit within the screen layout.
 
-### Warnings
-
-Walked through all the files cleaning up the warnings, mainly being newer code standards, lambda functions instead of function definitions, and updating deprecated libraries and functions.
-
 ### Camera and Scanning
 
 The application was using a deprecated `play-services-vision` (GMS Vision) library for QR code scanning. This was replaced with two modern Jetpack and ML Kit libraries.
@@ -93,22 +84,15 @@ These changes required raising the minimum SDK from 21 to 23, as both CameraX an
 
 ### Build System
 
-The build system was significantly updated to target API 36. A series of incremental changes were made across several commits.
+- Android Gradle Plugin 9.1.0 and Gradle 9.3.1 (via the wrapper); `compileSdk` and `targetSdk` 36, `minSdk` 23.
+- Java 21 source and target compatibility, so that no unit tests are skipped.
+- Dependencies come from `mavenCentral()` (no `jcenter()`) and are all AndroidX-native, so Jetifier is not used.
+- `app/build.gradle` declares an explicit `namespace`, as required by current AGP.
+- The legacy Apache HTTP library (`org.apache.http.legacy`) is not used; HTTP is handled by NanoHTTPD (see Http Server).
 
-- Upgraded Android Gradle Plugin from 7.3.1 to 9.1.0
-- Upgraded Gradle wrapper from 9.2.1 to 9.3.1
-- Updated `compileSdk` and `targetSdk` from 33 to 36
-- Updated `minSdk` from 18 to 21 in the initial Android 15 update, then further to 23 when the camera and scanning libraries were added (see Camera and Scanning section above)
-- Replaced the deprecated `jcenter()` Maven repository with `mavenCentral()`
-- Removed Jetifier, which is no longer needed now that all dependencies use AndroidX-native artifacts
-- Added Java 17 source and target compatibility via `compileOptions`, later raised to Java 21 so that no unit tests are skipped
-- Added an explicit `namespace` declaration to `app/build.gradle`, which is required by newer AGP versions
-- Removed `useLibrary 'org.apache.http.legacy'`, which was only needed by the old Apache HTTP server and became unnecessary after switching to NanoHTTPD
-- Cleaned up stale and deprecated entries in `gradle.properties`
+### Known limitations
 
-### Audio suggestion
-
-The audio functionality could be updated. On one specific device the chapter view would lag and then have audio errors. We believe that the efficiency of the audio functionality should be improved, though it does work. If this is needed for Google Play we are not sure, but it is the next big thing to update.
+- **Audio performance:** on at least one device the chapter view lagged and then reported audio errors. Playback and recording otherwise work, but the audio code could be made more efficient. This may need attention for Google Play requirements; we have not confirmed.
 
 # License
 
