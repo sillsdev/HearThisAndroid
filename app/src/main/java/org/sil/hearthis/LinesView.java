@@ -2,7 +2,7 @@ package org.sil.hearthis;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
@@ -16,14 +16,14 @@ import android.widget.TextView;
  * This class implements a LinearLayout which is expected to contain (only) a single ScrollView
  * containing a LinearLayout with asequence of TextViews.
  * It allows the user to grow or shrink the text in the child views
- * using the pinch guesture.
- * Currently it has direct knowledge that the scale factor is persisted in a setting called text_scale.
+ * using the pinch gesture.
+ * Currently, it has direct knowledge that the scale factor is persisted in a setting called text_scale.
  * Client should call updateScale() after changing the sequence of child views.
  * Enhance: probably could be made to automatically set scale on any child added
  * Name of preference to save scale could be configured.
  * Possibly it would be better to persist the font size (in case we want to let the user edit directly)
  * Created by Thomson on 3/8/2016.
- *
+
  * Note: originally this was implemented as a replacement for the LinearLayout directly containing the
  * text views, inside the scroll view. This doesn't work as well because often the scroll view
  * captures a touch and tries to scroll, when the user is trying to zoom. With the view managing
@@ -32,8 +32,8 @@ import android.widget.TextView;
  */
 public class LinesView extends LinearLayout {
 
-    private ScaleGestureDetector scaleManager;
-    public float scale = 1f;
+    private final ScaleGestureDetector scaleManager;
+    public float scale;
     float originalTextSize;
 
     public LinesView(Context context, AttributeSet attrs) {
@@ -51,7 +51,7 @@ public class LinesView extends LinearLayout {
             scale = Math.max(0.5f, Math.min(scale, 5.0f));
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
             editor.putFloat("text_scale", scale);
-            editor.commit();
+            editor.apply();
             updateScale();
             return true;
         }
@@ -112,7 +112,7 @@ public class LinesView extends LinearLayout {
         // says in practice ScaleGestureDetector.onTouchEvent ALWAYS returns true. So ignore the result.
         scaleManager.onTouchEvent(ev);
         skipOneTouch = scaleManager.isInProgress();
-        // Returning true means tat THIS event and all future events for this touch will go
+        // Returning true means that THIS event and all future events for this touch will go
         // to OUR onTouchEvent method rather than to children. If a pinch is started, it's a
         // good thing to suppress events to children, since it seems to make the pinch work a
         // bit more reliably, though it doesn't reliably stop the first touch from selecting
@@ -131,7 +131,15 @@ public class LinesView extends LinearLayout {
     boolean skipOneTouch = false;
 
     @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            performClick();
+        }
         // Skip the event we already passed to the scale manager that resulted in its being
         // in progress. After that, send events to it until it is no longer in progress.
         // Seems it might be helpful to only pass on events if scaleManager.isInProgress(),

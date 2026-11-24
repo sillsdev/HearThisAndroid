@@ -1,18 +1,24 @@
 package org.sil.hearthis;
 
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 
-/**
- * This seems to be a necessary part of storing preferences in the approved way.
- * We don't yet actually launch this activity anywhere.
- * Created by Thomson on 3/8/2016.
- */
-public class HearThisPreferences  extends PreferenceActivity {
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceFragmentCompat;
 
+public class HearThisPreferences extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.preferences);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(android.R.id.content, new SettingsFragment())
+                .commit();
+    }
+
+    public static class SettingsFragment extends PreferenceFragmentCompat {
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.preferences, rootKey);
+        }
     }
 }
